@@ -1,0 +1,810 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>velopX &mdash; UI Mockups (Dark)</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Space+Grotesk:wght@400;500;600;700;800&display=swap');
+
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+body{font-family:'Inter',system-ui,sans-serif;background:#070C14;color:#E8ECF1;-webkit-font-smoothing:antialiased;padding:48px 40px 120px}
+
+:root{
+  --n9:#070C14;--n8:#0C1526;--n7:#111E34;--n6:#162540;--n5:#1D3054;--n4:#253D68;
+  --bd:#1E2E48;--bd2:#253B5A;
+  --t:#E8ECF1;--t2:#8A97AA;--t3:#506070;
+  --or:#F5A623;--ord:rgba(245,166,35,.12);--org:rgba(245,166,35,.28);
+  --gr:#22C55E;--grd:rgba(34,197,94,.12);
+  --re:#EF4444;--red:rgba(239,68,68,.12);
+  --bl:#3B82F6;--bld:rgba(59,130,246,.12);
+  --pu:#A855F7;--pud:rgba(168,85,247,.12);
+  --rsm:6px;--rmd:10px;--rlg:16px;--rxl:22px
+}
+
+.doc-header{max-width:1400px;margin:0 auto 56px;padding-bottom:28px;border-bottom:1px solid var(--bd);display:flex;align-items:baseline;gap:20px}
+.doc-title{font-family:'Space Grotesk',sans-serif;font-size:28px;font-weight:800;letter-spacing:-.02em}
+.doc-title .x{color:var(--or)}
+.doc-tag{font-size:11px;font-weight:600;letter-spacing:.12em;text-transform:uppercase;color:var(--t3);background:var(--n7);border:1px solid var(--bd);padding:3px 10px;border-radius:20px}
+
+.sec{max-width:1400px;margin:72px auto 24px;display:flex;align-items:center;gap:14px}
+.sec-num{font-size:10px;font-weight:800;letter-spacing:.14em;text-transform:uppercase;color:var(--or);background:var(--ord);border:1px solid var(--org);padding:4px 12px;border-radius:20px}
+.sec-title{font-family:'Space Grotesk',sans-serif;font-size:18px;font-weight:700;color:var(--t)}
+.sec-note{margin-left:auto;font-size:11px;color:var(--t3)}
+
+.screen{max-width:1400px;margin:0 auto 20px;border-radius:var(--rxl);border:1px solid var(--bd);background:var(--n8);overflow:hidden}
+.chrome{padding:10px 20px;border-bottom:1px solid var(--bd);background:var(--n9);display:flex;align-items:center;gap:8px}
+.dot{width:11px;height:11px;border-radius:50%}
+.dot.r{background:#EF4444}.dot.y{background:#F5A623}.dot.g{background:#22C55E}
+.url{flex:1;margin:0 14px;background:var(--n7);border:1px solid var(--bd);border-radius:6px;padding:5px 14px;font-size:11px;color:var(--t3);font-family:'Courier New',monospace}
+
+.navbar{display:flex;align-items:center;padding:0 36px;height:62px;border-bottom:1px solid var(--bd);background:var(--n8);gap:44px}
+.brand{font-family:'Space Grotesk',sans-serif;font-size:18px;font-weight:800;letter-spacing:-.01em;display:flex;align-items:center;gap:10px;white-space:nowrap;flex-shrink:0}
+.brand-icon{width:32px;height:32px;background:var(--or);border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:15px}
+.brand .x{color:var(--or)}
+.navlinks{display:flex;gap:32px;font-size:13px;color:var(--t2);font-weight:500}
+.navr{margin-left:auto;display:flex;align-items:center;gap:10px}
+
+.btn{padding:8px 20px;border-radius:var(--rsm);font-size:13px;font-weight:600;cursor:pointer;border:none;font-family:inherit;display:inline-flex;align-items:center;gap:7px;white-space:nowrap}
+.btn-or{background:var(--or);color:#000}
+.btn-out{background:transparent;border:1.5px solid var(--bd2);color:var(--t2)}
+.btn-ghost{background:transparent;border:none;color:var(--t2)}
+.btn-out-or{background:transparent;border:1.5px solid var(--or);color:var(--or)}
+.btn-sm{padding:6px 13px;font-size:12px}
+.btn-lg{padding:12px 26px;font-size:14px}
+
+.hero{display:grid;grid-template-columns:1fr 520px;min-height:480px}
+.hero-l{padding:64px 52px;display:flex;flex-direction:column;justify-content:center;border-right:1px solid var(--bd)}
+.pill{display:inline-flex;align-items:center;gap:8px;border:1px solid var(--bd2);border-radius:20px;padding:5px 14px;font-size:12px;font-weight:600;color:var(--t3);margin-bottom:30px;width:fit-content}
+.pill .dot2{width:7px;height:7px;border-radius:50%;background:var(--or)}
+.h1{font-family:'Space Grotesk',sans-serif;font-size:52px;font-weight:800;line-height:1.05;letter-spacing:-.035em;margin-bottom:22px;color:var(--t)}
+.h1 .ac{color:var(--or)}
+.hero-p{font-size:15px;line-height:1.8;color:var(--t2);max-width:460px;margin-bottom:36px}
+.hero-actions{display:flex;gap:12px}
+.hero-r{padding:36px;display:flex;align-items:center;justify-content:center;background:var(--n7)}
+
+.qcard{width:100%;border-radius:var(--rlg);border:1px solid var(--bd);background:var(--n8);overflow:hidden}
+.qcard-h{padding:16px 20px;border-bottom:1px solid var(--bd);display:flex;align-items:center;gap:13px}
+.qcard-icon{width:38px;height:38px;border-radius:9px;background:var(--ord);display:flex;align-items:center;justify-content:center;font-size:17px;flex-shrink:0}
+.qcard-meta{flex:1}
+.qcard-title{font-size:13px;font-weight:700;color:var(--t)}
+.qcard-sub{font-size:11px;color:var(--t3);margin-top:1px}
+.qcard-avg-l{font-size:10px;color:var(--t3);text-align:right}
+.qcard-avg-v{font-family:'Space Grotesk',sans-serif;font-size:20px;font-weight:700;color:var(--t);text-align:right}
+.qrow{display:flex;align-items:center;padding:14px 20px;border-bottom:1px solid var(--bd);gap:14px}
+.qrow:last-child{border-bottom:none}
+.qname{font-size:13px;font-weight:600;color:var(--t)}
+.qtags{display:flex;gap:6px;margin-top:4px;align-items:center}
+.qprices{text-align:right;margin-left:auto;flex-shrink:0}
+.qprice{font-family:'Space Grotesk',sans-serif;font-size:16px;font-weight:700;color:var(--t)}
+.qcta{font-size:11px;font-weight:600;color:var(--or);margin-top:2px;cursor:pointer}
+
+.stats{display:flex;border-top:1px solid var(--bd);background:var(--n7)}
+.scell{flex:1;padding:22px 32px;border-right:1px solid var(--bd);text-align:center}
+.scell:last-child{border-right:none}
+.sval{font-family:'Space Grotesk',sans-serif;font-size:26px;font-weight:800;color:var(--t)}
+.slabel{font-size:12px;color:var(--t3);margin-top:4px}
+
+.badge{font-size:10px;font-weight:700;padding:3px 8px;border-radius:4px;text-transform:uppercase;letter-spacing:.04em;display:inline-block;white-space:nowrap}
+.b-oem{background:var(--bld);color:var(--bl)}
+.b-aft{background:var(--pud);color:var(--pu)}
+.b-used{background:rgba(161,100,40,.15);color:#C4832D}
+.b-gr{background:var(--grd);color:var(--gr)}
+.b-re{background:var(--red);color:var(--re)}
+.b-or{background:var(--ord);color:var(--or)}
+.b-tr{background:rgba(59,130,246,.14);color:#60A5FA}
+
+.feat{display:grid;grid-template-columns:1fr 1fr;min-height:440px}
+.feat-img{position:relative;overflow:hidden}
+.feat-img img{width:100%;height:100%;object-fit:cover;display:block;filter:brightness(.65) saturate(.8)}
+.feat-ov{position:absolute;inset:0;background:linear-gradient(to right,transparent 55%,var(--n8) 100%)}
+.fcard{position:absolute;bottom:28px;left:24px;right:24px;background:rgba(12,21,38,.93);backdrop-filter:blur(12px);border:1px solid var(--bd2);border-radius:var(--rmd);padding:16px 18px}
+.fcard-title{font-size:13px;font-weight:700;color:var(--t);margin-bottom:10px;display:flex;align-items:center;gap:7px}
+.frow{display:flex;justify-content:space-between;font-size:11px;margin-top:5px}
+.fl{color:var(--t3)}.fv{color:var(--t);font-weight:600}.fv.pos{color:var(--gr)}.fv.neg{color:var(--re)}
+.feat-c{padding:52px 48px;display:flex;flex-direction:column;justify-content:center}
+.eyebrow{font-size:11px;font-weight:700;letter-spacing:.14em;text-transform:uppercase;color:var(--or);margin-bottom:18px}
+.h2{font-family:'Space Grotesk',sans-serif;font-size:32px;font-weight:800;line-height:1.12;letter-spacing:-.025em;color:var(--t);margin-bottom:18px}
+.feat-p{font-size:14px;line-height:1.8;color:var(--t2);margin-bottom:28px}
+.feat-list{list-style:none;display:flex;flex-direction:column;gap:12px}
+.feat-list li{font-size:13px;color:var(--t2);display:flex;align-items:flex-start;gap:10px}
+.feat-list li::before{content:'&#9678;';color:var(--or);font-size:12px;margin-top:2px;flex-shrink:0}
+
+.cat{padding:48px 44px}
+.cat-h{display:flex;align-items:flex-end;justify-content:space-between;margin-bottom:32px}
+.cat-title{font-family:'Space Grotesk',sans-serif;font-size:26px;font-weight:700;color:var(--t)}
+.cat-sub{font-size:13px;color:var(--t3);margin-top:5px}
+.cat-link{font-size:13px;font-weight:600;color:var(--or);cursor:pointer}
+.pgrid{display:grid;grid-template-columns:repeat(4,1fr);gap:18px}
+.pcard{border-radius:var(--rlg);border:1px solid var(--bd);background:var(--n7);overflow:hidden;cursor:pointer;transition:border-color .2s}
+.pcard:hover{border-color:var(--or)}
+.pimg{aspect-ratio:4/3;overflow:hidden;background:var(--n6)}
+.pimg img{width:100%;height:100%;object-fit:cover;display:block}
+.pbody{padding:16px}
+.pname{font-size:13px;font-weight:600;color:var(--t);margin-bottom:8px;display:flex;justify-content:space-between;align-items:flex-start;gap:6px}
+.pprice{font-family:'Space Grotesk',sans-serif;font-size:18px;font-weight:700;color:var(--or)}
+
+.app{display:flex;min-height:700px}
+.sb{width:230px;flex-shrink:0;border-right:1px solid var(--bd);display:flex;flex-direction:column;padding:22px 0;background:var(--n9)}
+.sb-brand{padding:0 20px 18px;border-bottom:1px solid var(--bd);margin-bottom:10px}
+.sb-sec{font-size:9px;font-weight:700;letter-spacing:.15em;text-transform:uppercase;padding:10px 20px 4px;color:var(--t3)}
+.nitem{display:flex;align-items:center;gap:10px;padding:10px 20px;font-size:13px;font-weight:500;cursor:pointer;color:var(--t2);border-left:2px solid transparent}
+.nitem.active{color:var(--or);border-left-color:var(--or);background:var(--ord)}
+.nitem .ic{font-size:15px;width:20px;text-align:center}
+.nbadge{margin-left:auto;font-size:9px;font-weight:700;padding:2px 7px;border-radius:10px;background:var(--red);color:var(--re)}
+.nbadge.or{background:var(--ord);color:var(--or)}
+.sb-user{margin-top:auto;padding:16px 20px;border-top:1px solid var(--bd);display:flex;align-items:center;gap:11px}
+.av{width:32px;height:32px;border-radius:50%;overflow:hidden;flex-shrink:0}
+.av img{width:100%;height:100%;object-fit:cover}
+.uname{font-size:12px;font-weight:600;color:var(--t)}
+.urole{font-size:10px;color:var(--t3)}
+.mpane{flex:1;padding:28px 32px;background:var(--n9);overflow-y:auto}
+.ptitle{font-family:'Space Grotesk',sans-serif;font-size:22px;font-weight:700;color:var(--t);margin-bottom:3px}
+.psub{font-size:12px;color:var(--t3);margin-bottom:24px}
+
+.mg4{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin-bottom:22px}
+.mg5{display:grid;grid-template-columns:repeat(5,1fr);gap:14px;margin-bottom:22px}
+.met{border-radius:var(--rmd);padding:20px 22px;border:1px solid var(--bd);background:var(--n8)}
+.mlabel{font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:.1em;color:var(--t3);margin-bottom:12px}
+.mval{font-family:'Space Grotesk',sans-serif;font-size:30px;font-weight:700;line-height:1;color:var(--t);margin-bottom:8px}
+.mval.or{color:var(--or)}.mval.re{color:var(--re)}
+.mdelta{font-size:11px;font-weight:600;display:flex;align-items:center;gap:4px}
+.up{color:var(--gr)}.dn{color:var(--re)}.neu{color:var(--t3);font-weight:400}
+
+.card{border-radius:var(--rmd);border:1px solid var(--bd);background:var(--n8);overflow:hidden}
+.card-h{padding:15px 20px;border-bottom:1px solid var(--bd);display:flex;align-items:center;justify-content:space-between;background:var(--n7)}
+.ctitle{font-size:14px;font-weight:700;color:var(--t)}
+.cact{font-size:12px;font-weight:600;color:var(--or);cursor:pointer}
+
+table{width:100%;border-collapse:collapse;font-size:13px}
+th{padding:10px 16px;text-align:left;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:var(--t3);border-bottom:1px solid var(--bd);background:var(--n7)}
+td{padding:12px 16px;border-bottom:1px solid var(--bd);color:var(--t2);vertical-align:middle}
+tr:last-child td{border-bottom:none}
+td strong{color:var(--t);font-weight:600}
+.mono{font-family:'Courier New',monospace;font-size:11px}
+
+.rfqa{border-radius:var(--rmd);border:1px solid var(--org);background:var(--ord);padding:16px 18px;margin-bottom:18px}
+.rfqh{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.1em;color:var(--or);margin-bottom:8px}
+.rfqb{font-size:13px;color:var(--t2);margin-bottom:12px;line-height:1.6}
+.rfqb strong{color:var(--t)}
+
+.bench{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:18px}
+.bc{border-radius:var(--rsm);padding:16px 18px;border:1px solid var(--bd);background:var(--n7)}
+.bcl{font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:.1em;color:var(--t3);margin-bottom:8px}
+.bcv{font-family:'Space Grotesk',sans-serif;font-size:20px;font-weight:700;color:var(--t)}
+.bcv.or{color:var(--or)}.bcv.re{color:var(--re)}
+
+.dh{color:var(--re);font-weight:700}.dm{color:var(--or);font-weight:600}.dok{color:var(--gr);font-weight:600}
+
+.steps{display:flex;flex-direction:column}
+.step{display:flex;gap:16px;padding:10px 0}
+.sdot{width:28px;height:28px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:12px;flex-shrink:0;position:relative;z-index:1}
+.sdot.done{background:var(--or);color:#000;font-weight:700}
+.sdot.act{background:transparent;border:2px solid var(--or);color:var(--or);font-weight:700}
+.sdot.todo{background:var(--n6);color:var(--t3)}
+.step:not(:last-child) .sdot::after{content:'';position:absolute;top:28px;left:50%;transform:translateX(-50%);width:1px;height:24px;background:var(--bd)}
+.slabel{font-size:13px;font-weight:600;color:var(--t);padding-top:4px}
+.slabel.m{color:var(--t3);font-weight:400}
+.stime{font-size:11px;color:var(--t3);margin-top:2px}
+
+.mapbox{border-radius:var(--rmd);overflow:hidden;position:relative;margin-bottom:16px}
+.mapbox img{width:100%;height:220px;object-fit:cover;display:block;filter:brightness(.55) saturate(.7)}
+.mapov{position:absolute;inset:0;background:linear-gradient(to bottom,transparent 50%,rgba(7,12,20,.7) 100%)}
+.eta-badge{position:absolute;top:14px;left:14px;background:var(--or);color:#000;font-size:12px;font-weight:700;padding:5px 12px;border-radius:20px}
+.ping{position:absolute;top:50%;left:52%;transform:translate(-50%,-50%);width:16px;height:16px;border-radius:50%;background:var(--or);box-shadow:0 0 0 8px rgba(245,166,35,.25),0 0 0 16px rgba(245,166,35,.1)}
+
+.code{border-radius:var(--rmd);padding:20px 24px;font-family:'Courier New',monospace;font-size:12px;line-height:1.75;border:1px solid var(--bd);background:var(--n9);overflow-x:auto;margin-bottom:18px}
+.ck{color:#7DD3FC}.cs{color:var(--or)}.cn{color:#86EFAC}.cc{color:var(--t3)}
+
+.phone{width:320px;border-radius:36px;border:6px solid var(--n5);overflow:hidden;background:var(--n8)}
+.pnotch{height:28px;background:var(--n8);display:flex;align-items:center;justify-content:center}
+.pnotch-bar{width:80px;height:9px;border-radius:8px;background:var(--n5)}
+.psb-top{padding:6px 18px;display:flex;justify-content:space-between;font-size:10px;font-weight:600;color:var(--t3)}
+.pbody{padding:16px 18px}
+.pheader{display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:16px}
+.ptitle-p{font-family:'Space Grotesk',sans-serif;font-size:20px;font-weight:700;color:var(--t)}
+.psub-p{font-size:11px;color:var(--t3);margin-top:2px}
+.tabs{display:flex;gap:6px;margin-bottom:16px}
+.tab{flex:1;text-align:center;font-size:12px;font-weight:600;padding:8px 0;border-radius:var(--rsm);cursor:pointer}
+.tab.on{background:var(--or);color:#000}.tab.off{background:var(--n7);color:var(--t3)}
+.dcard{border-radius:var(--rmd);border:1px solid var(--bd);background:var(--n7);padding:14px;margin-bottom:10px}
+.pbnav{display:flex;border-top:1px solid var(--bd);padding:10px 0 5px;background:var(--n8)}
+.ptab{flex:1;display:flex;flex-direction:column;align-items:center;gap:3px;font-size:9px;font-weight:600;color:var(--t3);cursor:pointer}
+.ptab.on{color:var(--or)}
+.ptabic{font-size:18px}
+
+::-webkit-scrollbar{width:4px;height:4px}
+::-webkit-scrollbar-track{background:transparent}
+::-webkit-scrollbar-thumb{background:var(--n5);border-radius:4px}
+
+.doc-footer{max-width:1400px;margin:80px auto 0;padding-top:28px;border-top:1px solid var(--bd);display:flex;justify-content:space-between;align-items:center}
+.df-brand{font-family:'Space Grotesk',sans-serif;font-size:16px;font-weight:800;color:var(--t3)}
+.df-brand .x{color:var(--or)}
+.df-note{font-size:11px;color:var(--t3)}
+</style>
+</head>
+<body>
+
+<!-- DOC HEADER -->
+<div class="doc-header">
+  <div class="doc-title">velop<span class="x">X</span></div>
+  <div class="doc-tag">UI Mockups &mdash; Dark Screens</div>
+  <div style="margin-left:auto;font-size:12px;color:var(--t3)">April 2026 &nbsp;&middot;&nbsp; 8 screens &nbsp;&middot;&nbsp; Navy #0C1526 &nbsp;&middot;&nbsp; Orange #F5A623</div>
+</div>
+
+
+<!-- 01 LANDING PAGE -->
+<div class="sec">
+  <div class="sec-num">01</div>
+  <div class="sec-title">Landing Page</div>
+  <div class="sec-note">velopxapp.com</div>
+</div>
+
+<div class="screen">
+  <div class="chrome">
+    <div class="dot r"></div><div class="dot y"></div><div class="dot g"></div>
+    <div class="url">velopxapp.com</div>
+  </div>
+  <div class="navbar">
+    <div class="brand">
+      <div class="brand-icon">&#9889;</div>
+      velop<span class="x">X</span>
+    </div>
+    <div class="navlinks">
+      <span>Platform</span><span>Solutions</span><span>Network</span><span>API</span><span>Pricing</span>
+    </div>
+    <div class="navr">
+      <button class="btn btn-ghost btn-sm">Sign In</button>
+      <button class="btn btn-or btn-sm">Get Started &rarr;</button>
+    </div>
+  </div>
+  <div class="hero">
+    <div class="hero-l">
+      <div class="pill"><span class="dot2"></span>Governance-Grade Parts Infrastructure</div>
+      <h1 class="h1">The Motor Claims<br><span class="ac">Source of Truth.</span></h1>
+      <p class="hero-p">Replacing phone calls with auditable data. Connect dealers, garages, dispatchers, and insurers on a single transparent marketplace &mdash; from RFQ to delivered part.</p>
+      <div class="hero-actions">
+        <button class="btn btn-or btn-lg">Request Demo &rarr;</button>
+        <button class="btn btn-out btn-lg">Explore APIs</button>
+      </div>
+    </div>
+    <div class="hero-r">
+      <div class="qcard">
+        <div class="qcard-h">
+          <div class="qcard-icon">&#128269;</div>
+          <div class="qcard-meta">
+            <div class="qcard-title">Live Benchmark</div>
+            <div class="qcard-sub">Claim Ref: #ZA-9942 &middot; RAV4 2022</div>
+          </div>
+          <div>
+            <div class="qcard-avg-l">Market Avg</div>
+            <div class="qcard-avg-v">R 17,200</div>
+          </div>
+        </div>
+        <div class="qrow">
+          <div style="flex:1">
+            <div class="qname">Apex Auto Spares</div>
+            <div class="qtags"><span class="badge b-oem">OEM</span><span style="font-size:11px;color:var(--gr)">&#9679; In Stock</span></div>
+          </div>
+          <div class="qprices"><div class="qprice">R 16,200</div><div class="qcta">Select Quote</div></div>
+        </div>
+        <div class="qrow">
+          <div style="flex:1">
+            <div class="qname">Northroad Parts Co.</div>
+            <div class="qtags"><span class="badge b-aft">Aftermarket</span><span style="font-size:11px;color:var(--t3)">2 Days</span></div>
+          </div>
+          <div class="qprices"><div class="qprice">R 10,800</div><div class="qcta">Select Quote</div></div>
+        </div>
+        <div class="qrow">
+          <div style="flex:1">
+            <div class="qname">Salvage Yard 22</div>
+            <div class="qtags"><span class="badge b-used">Used</span><span style="font-size:11px;color:var(--gr)">&#9679; In Stock</span></div>
+          </div>
+          <div class="qprices"><div class="qprice">R 5,100</div><div class="qcta">Select Quote</div></div>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div class="stats">
+    <div class="scell"><div class="sval">0</div><div class="slabel">Phone calls needed</div></div>
+    <div class="scell"><div class="sval">100%</div><div class="slabel">Auditable trails</div></div>
+    <div class="scell"><div class="sval">&lt;&nbsp;2h</div><div class="slabel">Average quote time</div></div>
+    <div class="scell"><div class="sval">24/7</div><div class="slabel">Pricing availability</div></div>
+    <div class="scell"><div class="sval">9 markets</div><div class="slabel">Sub-Saharan Africa</div></div>
+  </div>
+</div>
+
+
+<!-- 02 FEATURE: ASSESSORS -->
+<div class="sec">
+  <div class="sec-num">02</div>
+  <div class="sec-title">Feature Section &mdash; Insurance Assessors</div>
+  <div class="sec-note">velopxapp.com/#assessors</div>
+</div>
+
+<div class="screen">
+  <div class="feat">
+    <div class="feat-img">
+      <img src="https://images.unsplash.com/photo-1586528116311-ad8dd3c8310d?w=900&q=80" alt="warehouse" />
+      <div class="feat-ov"></div>
+      <div class="fcard">
+        <div class="fcard-title"><span style="color:var(--gr);font-size:18px">&#10003;</span> Part Verified</div>
+        <div class="frow"><span class="fl mono">OEM No:</span><span class="fv mono">53711-42200</span></div>
+        <div class="frow"><span class="fl mono">Condition:</span><span class="fv" style="color:var(--bl)">New OEM</span></div>
+        <div class="frow"><span class="fl mono">Invoice:</span><span class="fv">KES 18,500</span></div>
+        <div class="frow"><span class="fl mono">Benchmark Avg:</span><span class="fv">KES 17,200</span></div>
+        <div class="frow"><span class="fl mono">Variance:</span><span class="fv neg">+7.6% &mdash; Review</span></div>
+      </div>
+    </div>
+    <div class="feat-c">
+      <div class="eyebrow">&#9889; For Insurance Assessors</div>
+      <h2 class="h2">Stop guessing.<br>Start defending<br>every claim line.</h2>
+      <p class="feat-p">Our pricing engine aggregates real-time market data across thousands of transactions to establish a defensible benchmark for every part category &mdash; OEM, aftermarket, or used.</p>
+      <ul class="feat-list">
+        <li>Instant benchmark comparison (Low / Avg / High)</li>
+        <li>Automated flagging of parts &gt;15% above market</li>
+        <li>One-click PDF audit reports for claim files</li>
+        <li>Historical pricing trends by make, model, and market</li>
+        <li>Confidence score per data point (seeded to blended to market)</li>
+      </ul>
+    </div>
+  </div>
+</div>
+
+
+<!-- 03 PARTS CATALOGUE -->
+<div class="sec">
+  <div class="sec-num">03</div>
+  <div class="sec-title">Parts Catalogue</div>
+  <div class="sec-note">velopxapp.com/catalogue</div>
+</div>
+
+<div class="screen">
+  <div class="cat">
+    <div class="cat-h">
+      <div>
+        <div class="cat-title">Comprehensive Coverage</div>
+        <div class="cat-sub">From engine blocks to fascias &mdash; all conditions, fully benchmarked.</div>
+      </div>
+      <div class="cat-link">Browse public catalogue &rarr;</div>
+    </div>
+    <div class="pgrid">
+      <div class="pcard">
+        <div class="pimg"><img src="https://images.unsplash.com/photo-1558618666-fcd25c85cd64?w=500&q=80" alt="Brake disc" /></div>
+        <div class="pbody">
+          <div class="pname">Brake Disc Rotor <span class="badge b-oem" style="font-size:9px">OEM</span></div>
+          <div class="pprice">R 850.00</div>
+        </div>
+      </div>
+      <div class="pcard">
+        <div class="pimg"><img src="https://images.unsplash.com/photo-1615906655593-ad0386982a0f?w=500&q=80" alt="Headlight" /></div>
+        <div class="pbody">
+          <div class="pname">LED Headlight Assy <span class="badge b-used" style="font-size:9px">USED</span></div>
+          <div class="pprice">R 4,200.00</div>
+        </div>
+      </div>
+      <div class="pcard">
+        <div class="pimg"><img src="https://images.unsplash.com/photo-1486006920555-c77dcf18193c?w=500&q=80" alt="Side mirror" /></div>
+        <div class="pbody">
+          <div class="pname">Side Mirror Unit <span class="badge b-aft" style="font-size:9px">AFTERMKT</span></div>
+          <div class="pprice">R 1,150.00</div>
+        </div>
+      </div>
+      <div class="pcard">
+        <div class="pimg"><img src="https://images.unsplash.com/photo-1609521263047-f8f205293f24?w=500&q=80" alt="Front bumper" /></div>
+        <div class="pbody">
+          <div class="pname">Front Bumper Cover <span class="badge b-oem" style="font-size:9px">OEM</span></div>
+          <div class="pprice">R 3,500.00</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+
+<!-- 04 DEALER DASHBOARD -->
+<div class="sec">
+  <div class="sec-num">04</div>
+  <div class="sec-title">Dealer Dashboard &mdash; velopX Dealer</div>
+  <div class="sec-note">app.velopxapp.com/dealer</div>
+</div>
+
+<div class="screen">
+  <div class="chrome">
+    <div class="dot r"></div><div class="dot y"></div><div class="dot g"></div>
+    <div class="url">app.velopxapp.com/dealer/dashboard</div>
+  </div>
+  <div class="app">
+    <div class="sb">
+      <div class="sb-brand">
+        <div class="brand" style="font-size:15px;gap:8px">
+          <div class="brand-icon" style="width:26px;height:26px;font-size:13px;border-radius:6px">&#9889;</div>
+          velop<span class="x">X</span>
+          <span style="font-size:11px;color:var(--t3);font-weight:400">Dealer</span>
+        </div>
+      </div>
+      <div class="sb-sec">Main</div>
+      <div class="nitem active"><span class="ic">&#128202;</span> Dashboard</div>
+      <div class="nitem"><span class="ic">&#128230;</span> Catalogue <span class="nbadge or">84</span></div>
+      <div class="nitem"><span class="ic">&#128722;</span> Orders <span class="nbadge">12</span></div>
+      <div class="nitem"><span class="ic">&#128172;</span> RFQs <span class="nbadge or">3</span></div>
+      <div class="nitem"><span class="ic">&#128665;</span> Dispatch</div>
+      <div class="sb-sec" style="margin-top:8px">Insights</div>
+      <div class="nitem"><span class="ic">&#128200;</span> Analytics</div>
+      <div class="nitem"><span class="ic">&#11088;</span> Reviews</div>
+      <div class="nitem"><span class="ic">&#9881;</span> Settings</div>
+      <div class="sb-user">
+        <div class="av"><img src="https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=80&q=80" alt="user" /></div>
+        <div><div class="uname">Apex Auto Spares</div><div class="urole">Johannesburg, ZA</div></div>
+      </div>
+    </div>
+    <div class="mpane">
+      <div class="ptitle">Dashboard</div>
+      <div class="psub">Thursday 24 Apr 2026 &nbsp;&middot;&nbsp; Performance overview and pending actions</div>
+      <div class="mg4">
+        <div class="met"><div class="mlabel">Active Listings</div><div class="mval">1,248</div><div class="mdelta up">&#8593; +12 <span class="neu">this week</span></div></div>
+        <div class="met"><div class="mlabel">Orders Today</div><div class="mval">18</div><div class="mdelta up">&#8593; +4 <span class="neu">vs yesterday</span></div></div>
+        <div class="met"><div class="mlabel">Pending RFQs</div><div class="mval or">3</div><div class="mdelta neu">Respond within 4h</div></div>
+        <div class="met"><div class="mlabel">Revenue MTD</div><div class="mval">R 342k</div><div class="mdelta up">&#8593; 18.2% <span class="neu">vs last month</span></div></div>
+      </div>
+      <div class="rfqa">
+        <div class="rfqh">&#9889; New RFQ &mdash; Respond by 14:30</div>
+        <div class="rfqb">Precision Panel Beaters &nbsp;&middot;&nbsp; Claim <span class="mono" style="color:var(--t3)">CLM-88219-ZA</span><br>2018 Ford Ranger 2.2 TDCi &nbsp;&middot;&nbsp; <strong>Front Bumper Assembly (OEM)</strong></div>
+        <div style="display:flex;gap:10px"><button class="btn btn-or btn-sm">Send Quote</button><button class="btn btn-out btn-sm">Decline</button></div>
+      </div>
+      <div class="card" style="margin-bottom:18px">
+        <div class="card-h"><div class="ctitle">Active Dispatches</div><div class="cact">View All &rarr;</div></div>
+        <table>
+          <thead><tr><th>Order</th><th>Part</th><th>Status</th><th>Buyer</th><th>ETA</th><th>Driver</th></tr></thead>
+          <tbody>
+            <tr><td><span class="mono">ORD-9921</span></td><td><strong>Front Bumper Assy</strong></td><td><span class="badge b-tr">In-Transit</span></td><td>Santam / Autobody City</td><td>14:00 Today</td><td>Sipho M. (FastWay)</td></tr>
+            <tr><td><span class="mono">ORD-9918</span></td><td><strong>Brake Disc Set</strong></td><td><span class="badge b-oem">Dispatched</span></td><td>Midrand Mechanics</td><td>16:30 Today</td><td>Kevin (Shop Driver)</td></tr>
+            <tr><td><span class="mono">ORD-9884</span></td><td><strong>LED Headlight L/H</strong></td><td><span class="badge b-gr">Delivered</span></td><td>Discovery / FixIt Right</td><td>09:15 Done</td><td>FastWay Logistics</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <div class="card">
+        <div class="card-h"><div class="ctitle">Top Catalogue Listings &mdash; This Week</div><div class="cact">Manage Catalogue &rarr;</div></div>
+        <table>
+          <thead><tr><th>Part Name</th><th>OEM No.</th><th>Cond.</th><th>Your Price</th><th>Market Avg</th><th>Views</th></tr></thead>
+          <tbody>
+            <tr><td><strong>Front Bumper Assembly</strong></td><td class="mono">53711-42200</td><td><span class="badge b-oem">OEM</span></td><td>R 18,500</td><td style="color:var(--t3)">R 17,200</td><td>94</td></tr>
+            <tr><td><strong>LED Headlight L/H</strong></td><td class="mono">81150-42300</td><td><span class="badge b-used">USED</span></td><td>R 28,000</td><td style="color:var(--t3)">R 28,500</td><td>72</td></tr>
+            <tr><td><strong>Side Mirror Complete</strong></td><td class="mono">87940-XXXXX</td><td><span class="badge b-aft">AFTERMKT</span></td><td>R 1,150</td><td style="color:var(--t3)">R 1,300</td><td>58</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+</div>
+
+
+<!-- 05 ASSESSOR INVOICE VALIDATION -->
+<div class="sec">
+  <div class="sec-num">05</div>
+  <div class="sec-title">Assessor &mdash; Invoice Validation</div>
+  <div class="sec-note">app.velopxapp.com/assess</div>
+</div>
+
+<div class="screen">
+  <div class="chrome">
+    <div class="dot r"></div><div class="dot y"></div><div class="dot g"></div>
+    <div class="url">app.velopxapp.com/assess/claims/CLM-2026-04821-KE</div>
+  </div>
+  <div style="padding:32px 36px;background:var(--n9)">
+    <div style="display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:24px">
+      <div>
+        <div style="font-family:'Space Grotesk',sans-serif;font-size:20px;font-weight:700;color:var(--t)">Invoice Validation</div>
+        <div style="font-size:12px;color:var(--t3);margin-top:4px">Claim Ref: <span class="mono">CLM-2026-04821-KE</span> &nbsp;&middot;&nbsp; Submitted 23 Apr 2026</div>
+      </div>
+      <div style="display:flex;gap:10px">
+        <button class="btn btn-out btn-sm">Save Draft</button>
+        <button class="btn btn-out-or btn-sm">Export PDF</button>
+        <button class="btn btn-or btn-sm">Approve Adjusted</button>
+      </div>
+    </div>
+    <div style="padding:14px 18px;border-radius:var(--rmd);background:var(--n7);border:1px solid var(--bd);margin-bottom:22px;display:flex;gap:32px;font-size:13px;color:var(--t2);flex-wrap:wrap;align-items:center">
+      <span>&#128663; <strong style="color:var(--t)">Toyota RAV4 2022 &middot; 2.5L Hybrid</strong></span>
+      <span>VIN: <span class="mono">JTMH3REV4ND002847</span></span>
+      <span>Insurer: <strong style="color:var(--t)">Jubilee Insurance Kenya</strong></span>
+      <span>Assessor: <strong style="color:var(--t)">James Ochieng</strong></span>
+    </div>
+    <div class="card" style="margin-bottom:22px">
+      <div class="card-h"><div class="ctitle">Submitted Invoice &mdash; Parts Line Items</div><span class="badge b-re">2 Flagged</span></div>
+      <table>
+        <thead><tr><th>Part Name</th><th>OEM No.</th><th>Cond.</th><th>Invoice Price</th><th>Bench Low</th><th>Bench Avg</th><th>Bench High</th><th>Deviation</th><th>Flag</th></tr></thead>
+        <tbody>
+          <tr><td><strong>Front Bumper Assembly</strong></td><td class="mono">53711-42200</td><td><span class="badge b-oem">OEM</span></td><td><strong>KES 18,500</strong></td><td style="color:var(--t3)">15,200</td><td style="color:var(--t3)">17,200</td><td style="color:var(--t3)">21,000</td><td class="dm">+7.6%</td><td><span class="badge b-or">Review</span></td></tr>
+          <tr><td><strong>Left Headlight Assembly</strong></td><td class="mono">81150-42300</td><td><span class="badge b-oem">OEM</span></td><td><strong>KES 42,000</strong></td><td style="color:var(--t3)">22,000</td><td style="color:var(--t3)">28,500</td><td style="color:var(--t3)">34,000</td><td class="dh">+47.4%</td><td><span class="badge b-re">Flagged</span></td></tr>
+          <tr><td><strong>Hood Assembly (Bonnet)</strong></td><td class="mono">53301-42260</td><td><span class="badge b-aft">AFTERMKT</span></td><td><strong>KES 12,200</strong></td><td style="color:var(--t3)">8,500</td><td style="color:var(--t3)">13,100</td><td style="color:var(--t3)">15,500</td><td class="dok">-6.9%</td><td><span class="badge b-gr">OK</span></td></tr>
+          <tr><td><strong>Radiator Assembly</strong></td><td class="mono">16400-28430</td><td><span class="badge b-oem">OEM</span></td><td><strong>KES 31,200</strong></td><td style="color:var(--t3)">18,000</td><td style="color:var(--t3)">22,800</td><td style="color:var(--t3)">26,500</td><td class="dh">+36.8%</td><td><span class="badge b-re">Flagged</span></td></tr>
+        </tbody>
+      </table>
+    </div>
+    <div class="bench">
+      <div class="bc"><div class="bcl">Invoice Total</div><div class="bcv">KES 103,900</div></div>
+      <div class="bc" style="border-color:var(--org)"><div class="bcl" style="color:var(--or)">Benchmark Total (Avg)</div><div class="bcv or">KES 81,600</div></div>
+      <div class="bc" style="border-color:rgba(239,68,68,.35)"><div class="bcl" style="color:var(--re)">Overcharge Detected</div><div class="bcv re">KES 22,300</div></div>
+      <div class="bc" style="border-color:rgba(239,68,68,.35)"><div class="bcl" style="color:var(--re)">Overcharge %</div><div class="bcv re">+27.3%</div></div>
+    </div>
+  </div>
+</div>
+
+
+<!-- 06 DELIVERY TRACKER + MOBILE -->
+<div class="sec">
+  <div class="sec-num">06</div>
+  <div class="sec-title">Delivery Tracker &amp; Driver Mobile App</div>
+  <div class="sec-note">Web (Garage) + Mobile (Driver)</div>
+</div>
+
+<div class="screen">
+  <div style="display:grid;grid-template-columns:1fr 400px;min-height:580px">
+    <div style="padding:36px;background:var(--n9);border-right:1px solid var(--bd)">
+      <div style="font-family:'Space Grotesk',sans-serif;font-size:18px;font-weight:700;color:var(--t);margin-bottom:4px">ORD-9921 &middot; Inbound Delivery</div>
+      <div style="font-size:12px;color:var(--t3);margin-bottom:22px">Apex Auto Spares &rarr; Midrand Mechanics &nbsp;&middot;&nbsp; Front Bumper Assembly &middot; OEM</div>
+      <div class="mapbox">
+        <img src="https://images.unsplash.com/photo-1477959858617-67f85cf4f1df?w=1000&q=80" alt="City aerial" />
+        <div class="mapov"></div>
+        <div class="eta-badge">&#128308; Live &middot; ETA 14:00</div>
+        <div class="ping"></div>
+      </div>
+      <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:24px">
+        <div style="border-radius:var(--rmd);background:var(--n7);border:1px solid var(--bd);padding:14px;text-align:center"><div style="font-size:9px;color:var(--t3);font-weight:700;text-transform:uppercase;letter-spacing:.1em;margin-bottom:6px">ETA</div><div style="font-family:'Space Grotesk',sans-serif;font-size:22px;font-weight:700;color:var(--or)">14:00</div></div>
+        <div style="border-radius:var(--rmd);background:var(--n7);border:1px solid var(--bd);padding:14px;text-align:center"><div style="font-size:9px;color:var(--t3);font-weight:700;text-transform:uppercase;letter-spacing:.1em;margin-bottom:6px">Distance</div><div style="font-family:'Space Grotesk',sans-serif;font-size:22px;font-weight:700;color:var(--t)">4.2 km</div></div>
+        <div style="border-radius:var(--rmd);background:var(--n7);border:1px solid var(--bd);padding:14px;text-align:center"><div style="font-size:9px;color:var(--t3);font-weight:700;text-transform:uppercase;letter-spacing:.1em;margin-bottom:6px">Driver</div><div style="font-family:'Space Grotesk',sans-serif;font-size:16px;font-weight:700;color:var(--t)">Sipho M.</div></div>
+        <div style="border-radius:var(--rmd);background:var(--n7);border:1px solid var(--bd);padding:14px;text-align:center"><div style="font-size:9px;color:var(--t3);font-weight:700;text-transform:uppercase;letter-spacing:.1em;margin-bottom:6px">Courier</div><div style="font-family:'Space Grotesk',sans-serif;font-size:15px;font-weight:700;color:var(--t)">FastWay</div></div>
+      </div>
+      <div class="steps">
+        <div class="step"><div class="sdot done">&#10003;</div><div><div class="slabel">Order Confirmed</div><div class="stime">11:32 &middot; Apex Auto Spares</div></div></div>
+        <div class="step"><div class="sdot done">&#10003;</div><div><div class="slabel">Part Collected from Shop</div><div class="stime">12:15 &middot; GPS logged</div></div></div>
+        <div class="step"><div class="sdot act">&rarr;</div><div><div class="slabel" style="color:var(--or)">In Transit</div><div class="stime">Since 12:20 &middot; ETA 14:00</div></div></div>
+        <div class="step"><div class="sdot todo">&#9702;</div><div><div class="slabel m">Arrived at Garage</div><div class="stime">Pending</div></div></div>
+        <div class="step"><div class="sdot todo">&#9702;</div><div><div class="slabel m">Delivery Confirmed (OTP)</div><div class="stime">Pending</div></div></div>
+      </div>
+    </div>
+    <div style="background:var(--n8);display:flex;align-items:center;justify-content:center;padding:32px">
+      <div class="phone">
+        <div class="pnotch"><div class="pnotch-bar"></div></div>
+        <div class="psb-top"><span>9:41</span><span>&#128246; &#128267;</span></div>
+        <div style="padding:12px 16px 0;background:var(--n8);border-bottom:1px solid var(--bd)">
+          <div class="brand" style="font-size:14px;gap:7px;padding-bottom:11px">
+            <div class="brand-icon" style="width:24px;height:24px;font-size:11px;border-radius:6px">&#9889;</div>
+            velop<span class="x">X</span>
+            <span style="font-size:10px;color:var(--t3);font-weight:400">Driver</span>
+          </div>
+        </div>
+        <div class="pbody">
+          <div class="pheader">
+            <div><div class="ptitle-p">My Runs</div><div class="psub-p">3 active today</div></div>
+            <span class="badge b-or">Active</span>
+          </div>
+          <div class="tabs">
+            <div class="tab on">Active (3)</div>
+            <div class="tab off">Done</div>
+          </div>
+          <div class="dcard" style="border-color:var(--org)">
+            <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:7px">
+              <div style="font-size:13px;font-weight:700;color:var(--t)">ORD-9921</div>
+              <span class="badge b-tr">In Transit</span>
+            </div>
+            <div style="font-size:11px;color:var(--t3);margin-bottom:3px">Apex Auto &rarr; Midrand Mechanics</div>
+            <div style="font-size:12px;color:var(--or);font-weight:600;margin-bottom:12px">ETA 14:00 &middot; 4.2 km away</div>
+            <button class="btn btn-or" style="width:100%;font-size:12px;padding:8px;justify-content:center">Mark Delivered</button>
+          </div>
+          <div class="dcard">
+            <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:7px">
+              <div style="font-size:13px;font-weight:700;color:var(--t)">ORD-9930</div>
+              <span class="badge b-oem">Pending Pickup</span>
+            </div>
+            <div style="font-size:11px;color:var(--t3);margin-bottom:3px">Parts Direct &rarr; Individual Buyer</div>
+            <div style="font-size:11px;color:var(--t3);margin-bottom:12px">Collect by 15:30</div>
+            <button class="btn btn-out-or" style="width:100%;font-size:12px;padding:8px;justify-content:center">Confirm Collected</button>
+          </div>
+        </div>
+        <div class="pbnav">
+          <div class="ptab on"><div class="ptabic">&#128665;</div>Runs</div>
+          <div class="ptab"><div class="ptabic">&#128510;</div>Map</div>
+          <div class="ptab"><div class="ptabic">&#128203;</div>History</div>
+          <div class="ptab"><div class="ptabic">&#128100;</div>Profile</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+
+<!-- 07 API REFERENCE -->
+<div class="sec">
+  <div class="sec-num">07</div>
+  <div class="sec-title">API Reference &mdash; Benchmark Endpoint</div>
+  <div class="sec-note">developers.velopxapp.com</div>
+</div>
+
+<div class="screen">
+  <div class="chrome">
+    <div class="dot r"></div><div class="dot y"></div><div class="dot g"></div>
+    <div class="url">developers.velopxapp.com/reference/parts/benchmark</div>
+  </div>
+  <div class="navbar">
+    <div class="brand" style="font-size:16px">
+      <div class="brand-icon" style="width:28px;height:28px;font-size:13px;border-radius:7px">&#9889;</div>
+      velop<span class="x">X</span>
+      <span style="font-size:12px;color:var(--t3);font-weight:400;margin-left:2px">API</span>
+    </div>
+    <div class="navlinks">
+      <span style="color:var(--or)">Reference</span><span>Guides</span><span>SDKs</span><span>Changelog</span>
+    </div>
+    <div class="navr">
+      <button class="btn btn-out btn-sm">Dashboard</button>
+      <button class="btn btn-or btn-sm">Get API Key &rarr;</button>
+    </div>
+  </div>
+  <div style="display:flex;min-height:520px">
+    <div style="width:220px;flex-shrink:0;border-right:1px solid var(--bd);padding:22px 0;background:var(--n9)">
+      <div style="font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:.13em;color:var(--t3);padding:0 18px 8px">Parts</div>
+      <div style="padding:9px 18px;font-size:12px;font-weight:700;border-left:2px solid var(--or);background:var(--ord);color:var(--or)" class="mono">GET /parts/benchmark</div>
+      <div style="padding:9px 18px;font-size:12px;color:var(--t3)" class="mono">GET /parts/search</div>
+      <div style="padding:9px 18px;font-size:12px;color:var(--t3)" class="mono">GET /parts/:id</div>
+      <div style="font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:.13em;color:var(--t3);padding:12px 18px 8px">Quotes</div>
+      <div style="padding:9px 18px;font-size:12px;color:var(--t3)" class="mono">POST /rfq</div>
+      <div style="padding:9px 18px;font-size:12px;color:var(--t3)" class="mono">GET /rfq/:id/quotes</div>
+      <div style="font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:.13em;color:var(--t3);padding:12px 18px 8px">Orders</div>
+      <div style="padding:9px 18px;font-size:12px;color:var(--t3)" class="mono">POST /orders</div>
+      <div style="padding:9px 18px;font-size:12px;color:var(--t3)" class="mono">GET /orders/:id</div>
+      <div style="font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:.13em;color:var(--t3);padding:12px 18px 8px">Delivery</div>
+      <div style="padding:9px 18px;font-size:12px;color:var(--t3)" class="mono">GET /delivery/:id/track</div>
+    </div>
+    <div style="flex:1;padding:36px 44px;background:var(--n8)">
+      <div style="display:flex;align-items:center;gap:12px;margin-bottom:12px">
+        <span style="background:var(--grd);color:var(--gr);font-size:12px;font-weight:700;padding:4px 10px;border-radius:5px" class="mono">GET</span>
+        <span class="mono" style="font-size:17px;color:var(--t);font-weight:700">/v1/parts/benchmark</span>
+        <span class="badge b-gr" style="font-size:9px">Stable</span>
+      </div>
+      <p style="font-size:14px;color:var(--t2);line-height:1.8;margin-bottom:28px;max-width:680px">Returns benchmark pricing &mdash; low, average, and high &mdash; for a part across all conditions. Used by insurance assessors for invoice validation and by dealers or garages to verify competitor quotes.</p>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:20px">
+        <div>
+          <div style="font-size:10px;font-weight:700;color:var(--t3);text-transform:uppercase;letter-spacing:.1em;margin-bottom:10px">Request</div>
+          <div class="code"><span class="cc">// GET /v1/parts/benchmark</span>
+<span class="cc">// ?oem=53711-42200&amp;country=KE</span>
+<span class="cc">// Authorization: Bearer {api_key}</span></div>
+          <div style="font-size:10px;font-weight:700;color:var(--t3);text-transform:uppercase;letter-spacing:.1em;margin-bottom:10px;margin-top:4px">Query Params</div>
+          <div class="code"><span class="ck">oem</span>       <span class="cc">string  OEM part number (required)</span>
+<span class="ck">country</span>   <span class="cc">string  ISO 3166-1 alpha-2 (KE, ZA...)</span>
+<span class="ck">condition</span> <span class="cc">string  oem|aftermarket|used|all</span></div>
+        </div>
+        <div>
+          <div style="font-size:10px;font-weight:700;color:var(--t3);text-transform:uppercase;letter-spacing:.1em;margin-bottom:10px">Response 200</div>
+          <div class="code">{
+  <span class="ck">"part"</span>: {
+    <span class="ck">"oem_number"</span>: <span class="cs">"53711-42200"</span>,
+    <span class="ck">"name"</span>: <span class="cs">"Front Bumper Assembly"</span>,
+    <span class="ck">"fits"</span>: [<span class="cs">"Toyota RAV4 2020-2023"</span>]
+  },
+  <span class="ck">"benchmark_kes"</span>: {
+    <span class="ck">"oem"</span>: {
+      <span class="ck">"low"</span>: <span class="cn">15200</span>,
+      <span class="ck">"avg"</span>: <span class="cn">17200</span>,
+      <span class="ck">"high"</span>: <span class="cn">21000</span>
+    },
+    <span class="ck">"aftermarket"</span>: { <span class="ck">"avg"</span>: <span class="cn">10800</span> },
+    <span class="ck">"used"</span>: { <span class="ck">"avg"</span>: <span class="cn">5100</span> }
+  },
+  <span class="ck">"dealers_available"</span>: <span class="cn">9</span>,
+  <span class="ck">"confidence_score"</span>: <span class="cn">0.96</span>,
+  <span class="ck">"source"</span>: <span class="cs">"market"</span>,
+  <span class="ck">"country"</span>: <span class="cs">"KE"</span>,
+  <span class="ck">"currency"</span>: <span class="cs">"KES"</span>
+}</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+
+<!-- 08 INSURER INTELLIGENCE -->
+<div class="sec">
+  <div class="sec-num">08</div>
+  <div class="sec-title">velopX Insight &mdash; Insurer Intelligence Dashboard</div>
+  <div class="sec-note">app.velopxapp.com/insight</div>
+</div>
+
+<div class="screen">
+  <div class="chrome">
+    <div class="dot r"></div><div class="dot y"></div><div class="dot g"></div>
+    <div class="url">app.velopxapp.com/insight &middot; Jubilee Insurance Kenya</div>
+  </div>
+  <div class="app">
+    <div class="sb">
+      <div class="sb-brand">
+        <div class="brand" style="font-size:15px;gap:8px">
+          <div class="brand-icon" style="width:26px;height:26px;font-size:13px;border-radius:6px">&#9889;</div>
+          velop<span class="x">X</span>
+          <span style="font-size:11px;color:var(--t3);font-weight:400">Insight</span>
+        </div>
+      </div>
+      <div style="padding:10px 20px 16px;border-bottom:1px solid var(--bd);margin-bottom:8px">
+        <div style="font-size:10px;color:var(--t3);margin-bottom:2px">Organisation</div>
+        <div style="font-size:12px;font-weight:600;color:var(--t)">Jubilee Insurance Kenya</div>
+      </div>
+      <div class="sb-sec">Reports</div>
+      <div class="nitem active"><span class="ic">&#128202;</span> Overview</div>
+      <div class="nitem"><span class="ic">&#128101;</span> Assessors</div>
+      <div class="nitem"><span class="ic">&#128203;</span> Claims</div>
+      <div class="nitem"><span class="ic">&#128665;</span> Deliveries</div>
+      <div class="sb-sec" style="margin-top:8px">Analytics</div>
+      <div class="nitem"><span class="ic">&#128200;</span> Pricing Trends</div>
+      <div class="nitem"><span class="ic">&#9888;</span> Anomalies <span class="nbadge">14</span></div>
+      <div class="nitem"><span class="ic">&#127758;</span> Geo Heatmap</div>
+      <div class="nitem"><span class="ic">&#128228;</span> Exports</div>
+      <div class="sb-user">
+        <div class="av"><img src="https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=80&q=80" alt="user" /></div>
+        <div><div class="uname">Sarah Kimani</div><div class="urole">Head of Claims</div></div>
+      </div>
+    </div>
+    <div class="mpane">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:24px">
+        <div>
+          <div class="ptitle">Insight Overview</div>
+          <div class="psub">April 2026 &middot; Jubilee Insurance Kenya</div>
+        </div>
+        <div style="display:flex;gap:10px">
+          <select style="height:34px;padding:0 12px;border-radius:var(--rsm);border:1px solid var(--bd);font-size:12px;color:var(--t2);background:var(--n7);font-family:inherit;cursor:pointer"><option>April 2026</option><option>March 2026</option></select>
+          <button class="btn btn-out-or btn-sm">Export Report</button>
+        </div>
+      </div>
+      <div class="mg5">
+        <div class="met"><div class="mlabel">Claims Processed</div><div class="mval">248</div><div class="mdelta up">&#8593; 12% <span class="neu">vs Mar</span></div></div>
+        <div class="met"><div class="mlabel">Parts Validated</div><div class="mval">1,840</div><div class="mdelta up">&#8593; 8%</div></div>
+        <div class="met"><div class="mlabel">Flags Raised</div><div class="mval re">34</div><div class="mdelta dn">14 critical</div></div>
+        <div class="met"><div class="mlabel">Savings Identified</div><div class="mval or">KES 2.1M</div><div class="mdelta up">Overcharge caught</div></div>
+        <div class="met"><div class="mlabel">Active Assessors</div><div class="mval">18</div><div class="mdelta neu">2 inactive</div></div>
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:18px">
+        <div class="card">
+          <div class="card-h"><div class="ctitle">Assessor Activity &mdash; April 2026</div><div class="cact">Full Report &rarr;</div></div>
+          <table>
+            <thead><tr><th>Assessor</th><th>Lookups</th><th>Claims</th><th>Flags</th><th>Risk</th></tr></thead>
+            <tbody>
+              <tr><td><strong>James Ochieng</strong></td><td>312</td><td>42</td><td><span class="badge b-gr">2</span></td><td><span style="color:var(--gr);font-size:11px;font-weight:600">Low</span></td></tr>
+              <tr><td><strong>Amara Mensah</strong></td><td>287</td><td>38</td><td><span class="badge b-gr">1</span></td><td><span style="color:var(--gr);font-size:11px;font-weight:600">Low</span></td></tr>
+              <tr><td><strong>Samuel Boateng</strong></td><td style="color:var(--re);font-weight:700">892</td><td>14</td><td><span class="badge b-re">11</span></td><td><span style="color:var(--re);font-size:11px;font-weight:700">High</span></td></tr>
+              <tr><td><strong>Fatima Diallo</strong></td><td>198</td><td>27</td><td><span class="badge b-gr">0</span></td><td><span style="color:var(--gr);font-size:11px;font-weight:600">Low</span></td></tr>
+            </tbody>
+          </table>
+        </div>
+        <div class="card">
+          <div class="card-h"><div class="ctitle">Top Pricing Anomalies</div><span class="badge b-re">14 Critical</span></div>
+          <table>
+            <thead><tr><th>Part</th><th>Invoice</th><th>Benchmark Avg</th><th>Deviation</th></tr></thead>
+            <tbody>
+              <tr><td><strong>Headlight Assembly</strong></td><td>KES 42,000</td><td style="color:var(--t3)">KES 28,500</td><td class="dh">+47.4%</td></tr>
+              <tr><td><strong>Radiator Assembly</strong></td><td>KES 31,200</td><td style="color:var(--t3)">KES 22,800</td><td class="dh">+36.8%</td></tr>
+              <tr><td><strong>A/C Compressor</strong></td><td>KES 58,000</td><td style="color:var(--t3)">KES 44,500</td><td class="dh">+30.3%</td></tr>
+              <tr><td><strong>Front Bumper</strong></td><td>KES 18,500</td><td style="color:var(--t3)">KES 17,200</td><td class="dm">+7.6%</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+      <div class="rfqa" style="border-color:rgba(239,68,68,.3);background:rgba(239,68,68,.07)">
+        <div class="rfqh" style="color:var(--re)">Anomaly Detected &mdash; Samuel Boateng &middot; 3 Claims This Week</div>
+        <div class="rfqb">Assessor has submitted <strong>892 part lookups</strong> this month against only 14 claims. Pricing deviations average <strong>+34.2% above benchmark</strong> across 11 flagged line items. Recommend internal audit.</div>
+        <div style="display:flex;gap:10px">
+          <button class="btn btn-sm" style="background:var(--re);color:#fff">Escalate for Audit</button>
+          <button class="btn btn-out btn-sm">Review Claims</button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+
+<!-- FOOTER -->
+<div class="doc-footer">
+  <div class="df-brand">velop<span class="x">X</span></div>
+  <div class="df-note">UI Mockups &mdash; Dark Screens Only &nbsp;&middot;&nbsp; April 2026 &nbsp;&middot;&nbsp; Navy #0C1526 &nbsp;&middot;&nbsp; Orange #F5A623</div>
+</div>
+
+</body>
+</html>

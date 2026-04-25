@@ -1,0 +1,39 @@
+{
+  "expo": {
+    "name": "velopX Garage",
+    "slug": "velopx-garage",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "scheme": "velopx-garage",
+    "userInterfaceStyle": "dark",
+    "icon": "./assets/icon.png",
+    "splash": {
+      "image": "./assets/splash.png",
+      "resizeMode": "contain",
+      "backgroundColor": "#070C14"
+    },
+    "ios": {
+      "supportsTablet": false,
+      "bundleIdentifier": "com.velopx.garage"
+    },
+    "android": {
+      "adaptiveIcon": {
+        "foregroundImage": "./assets/adaptive-icon.png",
+        "backgroundColor": "#070C14"
+      },
+      "package": "com.velopx.garage"
+    },
+    "plugins": [
+      "expo-router",
+      "expo-secure-store"
+    ],
+    "experiments": {
+      "typedRoutes": true
+    },
+    "extra": {
+      "eas": {
+        "projectId": "REPLACE_WITH_EAS_PROJECT_ID"
+      }
+    }
+  }
+}

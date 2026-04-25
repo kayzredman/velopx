@@ -1,0 +1,234 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ─── Enums ────────────────────────────────────────────────────────────────────
+
+enum UserRole {
+  dealer_owner
+  dealer_staff
+  garage_owner
+  garage_staff
+  assessor
+  insurer_admin
+  insurer_staff
+  driver
+  platform_admin
+}
+
+enum OrgType {
+  dealer
+  garage
+  insurance_company
+  courier
+}
+
+enum PartCondition {
+  oem
+  aftermarket
+  used
+}
+
+enum StockStatus {
+  in_stock
+  out_of_stock
+  limited
+}
+
+enum QuoteStatus {
+  pending
+  responded
+  accepted
+  declined
+  expired
+}
+
+enum OrderStatus {
+  pending
+  confirmed
+  dispatched
+  delivered
+  completed
+  cancelled
+  disputed
+}
+
+enum DeliveryStatus {
+  pending
+  assigned
+  collected
+  in_transit
+  delivered
+  confirmed
+  disputed
+}
+
+// ─── Models ───────────────────────────────────────────────────────────────────
+
+model Organisation {
+  id         String   @id @default(cuid())
+  clerkOrgId String   @unique
+  name       String
+  type       OrgType
+  country    String
+  users      User[]
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+}
+
+model User {
+  id             String        @id @default(cuid())
+  clerkId        String        @unique
+  email          String        @unique
+  name           String?
+  role           UserRole
+  organisationId String?
+  organisation   Organisation? @relation(fields: [organisationId], references: [id])
+  createdAt      DateTime      @default(now())
+  updatedAt      DateTime      @updatedAt
+
+  parts       Part[]
+  quotes      Quote[]
+  orders      Order[]
+  auditEvents AuditEvent[]
+
+  @@index([clerkId])
+  @@index([organisationId])
+}
+
+model Part {
+  id          String        @id @default(cuid())
+  dealerId    String
+  dealer      User          @relation(fields: [dealerId], references: [id])
+  name        String
+  description String?
+  oemNumber   String?
+  condition   PartCondition
+  price       Decimal       @db.Decimal(12, 2)
+  currency    String        @default("GHS")
+  country     String
+  stockStatus StockStatus   @default(in_stock)
+  attributes  Json          // JSONB — flexible per-part-type attributes
+  images      String[]      // array of image URLs
+  createdAt   DateTime      @default(now())
+  updatedAt   DateTime      @updatedAt
+
+  quoteItems QuoteItem[]
+  orderItems OrderItem[]
+
+  @@index([oemNumber])
+  @@index([dealerId])
+  @@index([country])
+  @@index([stockStatus])
+}
+
+model Quote {
+  id             String      @id @default(cuid())
+  requesterId    String
+  requester      User        @relation(fields: [requesterId], references: [id])
+  claimReference String?
+  vehicleProfile Json?       // { vin, make, model, year, engine, bodyType }
+  status         QuoteStatus @default(pending)
+  expiresAt      DateTime?
+  items          QuoteItem[]
+  createdAt      DateTime    @default(now())
+  updatedAt      DateTime    @updatedAt
+
+  @@index([requesterId])
+  @@index([claimReference])
+  @@index([status])
+}
+
+model QuoteItem {
+  id        String   @id @default(cuid())
+  quoteId   String
+  quote     Quote    @relation(fields: [quoteId], references: [id], onDelete: Cascade)
+  partId    String
+  part      Part     @relation(fields: [partId], references: [id])
+  price     Decimal  @db.Decimal(12, 2)
+  currency  String
+  note      String?
+  createdAt DateTime @default(now())
+
+  @@index([quoteId])
+  @@index([partId])
+}
+
+model Order {
+  id             String      @id @default(cuid())
+  buyerId        String
+  buyer          User        @relation(fields: [buyerId], references: [id])
+  claimReference String?
+  status         OrderStatus @default(pending)
+  totalAmount    Decimal     @db.Decimal(12, 2)
+  currency       String
+  items          OrderItem[]
+  delivery       Delivery?
+  createdAt      DateTime    @default(now())
+  updatedAt      DateTime    @updatedAt
+
+  @@index([buyerId])
+  @@index([claimReference])
+  @@index([status])
+}
+
+model OrderItem {
+  id       String  @id @default(cuid())
+  orderId  String
+  order    Order   @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  partId   String
+  part     Part    @relation(fields: [partId], references: [id])
+  quantity Int     @default(1)
+  price    Decimal @db.Decimal(12, 2)
+  currency String
+
+  @@index([orderId])
+  @@index([partId])
+}
+
+model Delivery {
+  id          String         @id @default(cuid())
+  orderId     String         @unique
+  order       Order          @relation(fields: [orderId], references: [id])
+  driverId    String?
+  status      DeliveryStatus @default(pending)
+  collectedAt DateTime?
+  deliveredAt DateTime?
+  proofUrl    String?        // photo / e-signature URL
+  createdAt   DateTime       @default(now())
+  updatedAt   DateTime       @updatedAt
+}
+
+// Append-only — no updates, no deletes at the application layer
+model AuditEvent {
+  id             String   @id @default(cuid())
+  userId         String?
+  user           User?    @relation(fields: [userId], references: [id])
+  organisationId String?
+  role           String?
+  actionType     String
+  resource       String?
+  resourceId     String?
+  claimReference String?
+  outcome        String   @default("SUCCESS")
+  country        String?
+  sessionId      String?
+  requestId      String?
+  latencyMs      Int?
+  metadata       Json?
+  createdAt      DateTime @default(now())
+
+  @@index([userId])
+  @@index([organisationId])
+  @@index([actionType])
+  @@index([claimReference])
+  @@index([createdAt])
+}

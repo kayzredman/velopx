@@ -1,0 +1,15 @@
+{
+  "name": "velopx-mobile",
+  "version": "0.0.1",
+  "private": true,
+  "packageManager": "pnpm@9.12.0",
+  "workspaces": [
+    "apps/*",
+    "packages/*"
+  ],
+  "scripts": {
+    "dealer": "pnpm --filter dealer start",
+    "garage": "pnpm --filter garage start",
+    "driver": "pnpm --filter driver start"
+  }
+}

@@ -1,0 +1,93 @@
+import { useUser } from '@clerk/clerk-expo'
+import { useCallback, useEffect, useState } from 'react'
+import { View, Text, StyleSheet, ScrollView, RefreshControl, ActivityIndicator } from 'react-native'
+import { SafeAreaView } from 'react-native-safe-area-context'
+import { Colors, useApi } from '@velopx/shared'
+
+interface DashboardStats {
+  activeQuotes: number
+  openOrders: number
+  pendingDeliveries: number
+}
+
+export default function GarageDashboard() {
+  const { user } = useUser()
+  const { apiFetch } = useApi()
+  const [stats, setStats] = useState<DashboardStats | null>(null)
+  const [refreshing, setRefreshing] = useState(false)
+
+  const fetchStats = useCallback(async () => {
+    try {
+      const [quotesRes, ordersRes, deliveriesRes] = await Promise.all([
+        apiFetch<{ data: { status: string }[] }>('/v1/quotes'),
+        apiFetch<{ data: { status: string }[] }>('/v1/orders'),
+        apiFetch<{ data: { status: string }[] }>('/v1/deliveries'),
+      ])
+
+      setStats({
+        activeQuotes: quotesRes.data.filter((q) => q.status === 'pending').length,
+        openOrders: ordersRes.data.filter((o) =>
+          ['pending', 'confirmed', 'dispatched'].includes(o.status),
+        ).length,
+        pendingDeliveries: deliveriesRes.data.filter((d) =>
+          ['assigned', 'collected', 'in_transit'].includes(d.status),
+        ).length,
+      })
+    } catch {
+      setStats({ activeQuotes: 0, openOrders: 0, pendingDeliveries: 0 })
+    }
+  }, [apiFetch])
+
+  useEffect(() => { fetchStats() }, [fetchStats])
+
+  async function onRefresh() {
+    setRefreshing(true)
+    await fetchStats()
+    setRefreshing(false)
+  }
+
+  const statCards = [
+    { label: 'Active Quotes', value: stats?.activeQuotes },
+    { label: 'Open Orders', value: stats?.openOrders },
+    { label: 'Pending Deliveries', value: stats?.pendingDeliveries },
+  ]
+
+  return (
+    <SafeAreaView style={styles.safe}>
+      <ScrollView
+        contentContainerStyle={styles.content}
+        refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={Colors.orange500} />}
+      >
+        <Text style={styles.greeting}>Hey, {user?.firstName ?? 'there'} 👋</Text>
+        <Text style={styles.subtitle}>Garage Dashboard</Text>
+
+        {statCards.map((stat) => (
+          <View key={stat.label} style={styles.card}>
+            <Text style={styles.cardLabel}>{stat.label}</Text>
+            {stat.value === undefined ? (
+              <ActivityIndicator color={Colors.orange500} style={{ marginTop: 8 }} />
+            ) : (
+              <Text style={styles.cardValue}>{stat.value}</Text>
+            )}
+          </View>
+        ))}
+      </ScrollView>
+    </SafeAreaView>
+  )
+}
+
+const styles = StyleSheet.create({
+  safe: { flex: 1, backgroundColor: Colors.navy950 },
+  content: { padding: 20, gap: 12 },
+  greeting: { fontSize: 24, fontWeight: '700', color: Colors.textPrimary },
+  subtitle: { fontSize: 14, color: Colors.textSecondary, marginBottom: 12 },
+  card: {
+    backgroundColor: Colors.navy900,
+    borderRadius: 14,
+    borderWidth: 1,
+    borderColor: Colors.navy700,
+    padding: 20,
+  },
+  cardLabel: { fontSize: 13, color: Colors.textSecondary },
+  cardValue: { fontSize: 32, fontWeight: '700', color: Colors.textPrimary, marginTop: 4 },
+})

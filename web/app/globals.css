@@ -1,0 +1,25 @@
+/* Tailwind base + velopX global tokens */
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --navy-950: #070c14;
+  --navy-900: #0c1526;
+  --navy-800: #111e34;
+  --navy-700: #1e2e48;
+  --navy-600: #2d4264;
+  --orange-500: #f5a623;
+  --orange-400: #f7bc5a;
+  --text-primary: #e8ecf1;
+  --text-secondary: #8a97aa;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body {
+  height: 100%;
+}
