@@ -39,6 +39,13 @@ backend/prisma/migrations/dev.db
 backend/prisma/*.db
 backend/prisma/*.db-journal
 
+# Lock files (pnpm workspace — use pnpm-lock.yaml)
+package-lock.json
+web/package-lock.json
+
+# VS Code terminal working directory mirror
+status/
+
 # TypeScript
 *.tsbuildinfo
 
