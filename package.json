@@ -3,17 +3,17 @@
   "version": "0.0.1",
   "private": true,
   "packageManager": "pnpm@9.12.0",
-  "workspaces": [
-    "backend",
-    "web"
-  ],
   "scripts": {
     "dev:backend": "pnpm --filter backend dev",
     "dev:web": "pnpm --filter web dev",
-    "dev": "concurrently \"pnpm run dev:backend\" \"pnpm run dev:web\"",
+    "dev:status": "pnpm --filter status dev",
+    "dev": "concurrently \"pnpm run dev:backend\" \"pnpm run dev:web\" \"pnpm run dev:status\"",
     "db:generate": "pnpm --filter backend db:generate",
     "db:migrate": "pnpm --filter backend db:migrate",
-    "build": "pnpm --filter backend build && pnpm --filter web build"
+    "db:seed": "pnpm --filter backend db:seed",
+    "db:link-me": "pnpm --filter backend db:link-me",
+    "db:reset-seed": "pnpm --filter backend db:reset-seed",
+    "build": "pnpm --filter backend build && pnpm --filter web build && pnpm --filter status build"
   },
   "devDependencies": {
     "concurrently": "^9.0.0"

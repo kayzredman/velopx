@@ -9,11 +9,19 @@ export const kafkaProducer: Producer = kafka.producer({
   allowAutoTopicCreation: true,
 })
 
+let _kafkaConnected = false
+
+export function isKafkaConnected(): boolean {
+  return _kafkaConnected
+}
+
 export async function connectKafka(): Promise<void> {
   await kafkaProducer.connect()
+  _kafkaConnected = true
 }
 
 export async function disconnectKafka(): Promise<void> {
+  _kafkaConnected = false
   await kafkaProducer.disconnect()
 }
 

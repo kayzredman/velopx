@@ -203,6 +203,7 @@ model Delivery {
   collectedAt DateTime?
   deliveredAt DateTime?
   proofUrl    String?        // photo / e-signature URL
+  note        String?
   createdAt   DateTime       @default(now())
   updatedAt   DateTime       @updatedAt
 }

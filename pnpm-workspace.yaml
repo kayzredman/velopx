@@ -1,0 +1,6 @@
+packages:
+  - backend
+  - web
+  - status
+  - mobile/apps/*
+  - mobile/packages/*
