@@ -14,7 +14,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
   return (
     <html lang="en" className={inter.variable}>
       <body className="bg-[#070C14] text-[#E8ECF1] antialiased">
-        <ClerkProvider>{children}</ClerkProvider>
+        <ClerkProvider dynamic>{children}</ClerkProvider>
       </body>
     </html>
   )
