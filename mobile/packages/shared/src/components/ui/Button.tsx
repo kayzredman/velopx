@@ -6,7 +6,7 @@ import {
   StyleSheet,
   type TouchableOpacityProps,
 } from 'react-native'
-import { Colors } from '../constants/colors'
+import { Colors } from '../../constants/colors'
 
 interface ButtonProps extends TouchableOpacityProps {
   label: string

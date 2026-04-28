@@ -17,5 +17,11 @@
   },
   "devDependencies": {
     "concurrently": "^9.0.0"
+  },
+  "pnpm": {
+    "overrides": {
+      "expo-crypto": "~15.0.9",
+      "react-native": "0.81.5"
+    }
   }
 }
