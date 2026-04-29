@@ -1,7 +1,8 @@
 import { useUser } from '@clerk/clerk-expo'
 import { useCallback, useEffect, useState } from 'react'
-import { View, Text, StyleSheet, ScrollView, RefreshControl, ActivityIndicator } from 'react-native'
+import { View, Text, StyleSheet, ScrollView, RefreshControl, ActivityIndicator, TouchableOpacity } from 'react-native'
 import { SafeAreaView } from 'react-native-safe-area-context'
+import { useRouter } from 'expo-router'
 import { Colors, useApi } from '@velopx/shared'
 
 interface DashboardStats {
@@ -13,6 +14,7 @@ interface DashboardStats {
 export default function GarageDashboard() {
   const { user } = useUser()
   const { apiFetch } = useApi()
+  const router = useRouter()
   const [stats, setStats] = useState<DashboardStats | null>(null)
   const [refreshing, setRefreshing] = useState(false)
 
@@ -47,9 +49,9 @@ export default function GarageDashboard() {
   }
 
   const statCards = [
-    { label: 'Active Quotes', value: stats?.activeQuotes },
-    { label: 'Open Orders', value: stats?.openOrders },
-    { label: 'Pending Deliveries', value: stats?.pendingDeliveries },
+    { label: 'Active Quotes', value: stats?.activeQuotes, trackable: false },
+    { label: 'Open Orders', value: stats?.openOrders, trackable: false },
+    { label: 'Pending Deliveries', value: stats?.pendingDeliveries, trackable: true },
   ]
 
   return (
@@ -68,6 +70,16 @@ export default function GarageDashboard() {
               <ActivityIndicator color={Colors.orange500} style={{ marginTop: 8 }} />
             ) : (
               <Text style={styles.cardValue}>{stat.value}</Text>
+            )}
+            {stat.trackable && (stat.value ?? 0) > 0 && (
+              <TouchableOpacity
+                style={styles.trackBtn}
+                onPress={() =>
+                  router.push({ pathname: '/inbound/[id]', params: { id: 'mock-del-1' } })
+                }
+              >
+                <Text style={styles.trackBtnText}>Track Inbound →</Text>
+              </TouchableOpacity>
             )}
           </View>
         ))}
@@ -90,4 +102,14 @@ const styles = StyleSheet.create({
   },
   cardLabel: { fontSize: 13, color: Colors.textSecondary },
   cardValue: { fontSize: 32, fontWeight: '700', color: Colors.textPrimary, marginTop: 4 },
+  trackBtn: {
+    marginTop: 12,
+    alignSelf: 'flex-start',
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: Colors.orange500,
+  },
+  trackBtnText: { fontSize: 12, fontWeight: '600', color: Colors.orange500 },
 })

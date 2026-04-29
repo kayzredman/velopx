@@ -34,11 +34,17 @@ const UpdateStatusSchema = z.object({
   note: z.string().max(500).optional(),
 })
 
+const LocationUpdateSchema = z.object({
+  lat: z.number().finite(),
+  lng: z.number().finite(),
+})
+
 // ── GET /v1/deliveries — scoped list by role
 router.get('/', requireClerkAuth, async (req, res, next) => {
   try {
     const auth = getRequestAuth(req)
-    const user = await prisma.user.findUnique({ where: { clerkId: auth.userId! } })
+    if (!auth.userId) return next(createHttpError(401, 'Unauthorized'))
+    const user = await prisma.user.findUnique({ where: { clerkId: auth.userId } })
     if (!user) throw createHttpError(404, 'User not found')
 
     // Scope deliveries to what the authenticated user is allowed to see
@@ -96,11 +102,21 @@ router.get('/:id', requireClerkAuth, async (req, res, next) => {
             },
           },
         },
+        driver: { select: { id: true, name: true, email: true } },
       },
     })
 
     if (!delivery) throw createHttpError(404, 'Delivery not found')
-    res.json({ data: delivery })
+
+    const shaped = {
+      ...delivery,
+      driverLocation: delivery.driverLat != null ? { lat: delivery.driverLat, lng: delivery.driverLng } : null,
+      destination: delivery.destLat != null ? { lat: delivery.destLat, lng: delivery.destLng } : null,
+      estimatedMinutes: null,
+      distanceKm: null,
+      driver: delivery.driver,
+    }
+    res.json({ data: shaped })
   } catch (err) {
     next(err)
   }
@@ -114,9 +130,10 @@ router.post(
   async (req, res, next) => {
     try {
       const auth = getRequestAuth(req)
+      if (!auth.userId) return next(createHttpError(401, 'Unauthorized'))
       const { orderId } = z.object({ orderId: z.string().cuid() }).parse(req.body)
 
-      const user = await prisma.user.findUnique({ where: { clerkId: auth.userId! } })
+      const user = await prisma.user.findUnique({ where: { clerkId: auth.userId } })
       if (!user) throw createHttpError(404, 'User not found')
 
       const order = await prisma.order.findUnique({ where: { id: orderId } })
@@ -154,7 +171,8 @@ router.post(
 router.patch('/:id/status', requireClerkAuth, async (req, res, next) => {
   try {
     const auth = getRequestAuth(req)
-    const user = await prisma.user.findUnique({ where: { clerkId: auth.userId! } })
+    if (!auth.userId) return next(createHttpError(401, 'Unauthorized'))
+    const user = await prisma.user.findUnique({ where: { clerkId: auth.userId } })
     if (!user) throw createHttpError(404, 'User not found')
 
     const body = UpdateStatusSchema.parse(req.body)
@@ -204,6 +222,7 @@ router.patch('/:id/status', requireClerkAuth, async (req, res, next) => {
     const updateData: Record<string, unknown> = { status: nextStatus }
     if (body.driverId) updateData.driverId = body.driverId
     if (body.proofUrl) updateData.proofUrl = body.proofUrl
+    if (body.note !== undefined) updateData.note = body.note
     if (nextStatus === 'collected') updateData.collectedAt = new Date()
     if (nextStatus === 'delivered') updateData.deliveredAt = new Date()
 
@@ -229,5 +248,39 @@ router.patch('/:id/status', requireClerkAuth, async (req, res, next) => {
     next(err)
   }
 })
+
+// ── PATCH /v1/deliveries/:id/location — driver updates their live GPS position
+router.patch(
+  '/:id/location',
+  requireClerkAuth,
+  requireRole('driver', 'platform_admin'),
+  async (req, res, next) => {
+    try {
+      const auth = getRequestAuth(req)
+      if (!auth.userId) return next(createHttpError(401, 'Unauthorized'))
+      const { lat, lng } = LocationUpdateSchema.parse(req.body)
+
+      const delivery = await prisma.delivery.findUnique({ where: { id: req.params.id } })
+      if (!delivery) throw createHttpError(404, 'Delivery not found')
+
+      const updated = await prisma.delivery.update({
+        where: { id: req.params.id },
+        data: { driverLat: lat, driverLng: lng },
+      })
+
+      await publishEvent('delivery_events', delivery.id, {
+        event_type: 'DELIVERY_LOCATION_UPDATED',
+        delivery_id: delivery.id,
+        driver_lat: lat,
+        driver_lng: lng,
+        updated_by: auth.userId,
+      })
+
+      res.json({ data: updated })
+    } catch (err) {
+      next(err)
+    }
+  },
+)
 
 export default router

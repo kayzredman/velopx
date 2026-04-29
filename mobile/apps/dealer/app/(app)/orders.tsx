@@ -9,6 +9,7 @@ import {
   TouchableOpacity,
 } from 'react-native'
 import { SafeAreaView } from 'react-native-safe-area-context'
+import { useRouter } from 'expo-router'
 import { Colors, useApi } from '@velopx/shared'
 
 interface OrderItem {
@@ -39,8 +40,11 @@ const STATUS_COLOR: Record<string, string> = {
   disputed:   Colors.error,
 }
 
+const IN_PROGRESS_STATUSES = ['assigned', 'collected', 'in_transit']
+
 export default function OrdersScreen() {
   const { apiFetch } = useApi()
+  const router = useRouter()
   const [orders, setOrders] = useState<Order[]>([])
   const [loading, setLoading] = useState(true)
   const [refreshing, setRefreshing] = useState(false)
@@ -138,6 +142,19 @@ export default function OrdersScreen() {
               <View style={styles.deliveryRow}>
                 <Text style={styles.deliveryLabel}>Delivery:</Text>
                 <Text style={styles.deliveryStatus}>{item.delivery.status.replace('_', ' ')}</Text>
+                {IN_PROGRESS_STATUSES.includes(item.delivery.status) && (
+                  <TouchableOpacity
+                    style={styles.trackBtn}
+                    onPress={() =>
+                      router.push({
+                        pathname: '/delivery/[id]',
+                        params: { id: __DEV__ ? 'mock-del-1' : item.delivery?.id ?? '' },
+                      })
+                    }
+                  >
+                    <Text style={styles.trackText}>Track →</Text>
+                  </TouchableOpacity>
+                )}
               </View>
             )}
 
@@ -180,9 +197,18 @@ const styles = StyleSheet.create({
   statusBadge: { borderWidth: 1, borderRadius: 8, paddingHorizontal: 8, paddingVertical: 3 },
   statusText: { fontSize: 11, fontWeight: '600', textTransform: 'capitalize' },
   itemList: { fontSize: 12, color: Colors.textSecondary },
-  deliveryRow: { flexDirection: 'row', alignItems: 'center', gap: 6 },
+  deliveryRow: { flexDirection: 'row', alignItems: 'center', gap: 6, flexWrap: 'wrap' },
   deliveryLabel: { fontSize: 12, color: Colors.textSecondary },
   deliveryStatus: { fontSize: 12, color: Colors.textPrimary, textTransform: 'capitalize' },
+  trackBtn: {
+    marginLeft: 'auto',
+    paddingHorizontal: 10,
+    paddingVertical: 4,
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: Colors.orange500,
+  },
+  trackText: { fontSize: 11, fontWeight: '600', color: Colors.orange500 },
   confirmBtn: {
     backgroundColor: Colors.orange500,
     borderRadius: 10,

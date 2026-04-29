@@ -95,10 +95,11 @@ model User {
   createdAt      DateTime      @default(now())
   updatedAt      DateTime      @updatedAt
 
-  parts       Part[]
-  quotes      Quote[]
-  orders      Order[]
-  auditEvents AuditEvent[]
+  parts              Part[]
+  quotes             Quote[]
+  orders             Order[]
+  auditEvents        AuditEvent[]
+  assignedDeliveries Delivery[]   @relation("DriverDeliveries")
 
   @@index([clerkId])
   @@index([organisationId])
@@ -199,11 +200,16 @@ model Delivery {
   orderId     String         @unique
   order       Order          @relation(fields: [orderId], references: [id])
   driverId    String?
+  driver      User?          @relation("DriverDeliveries", fields: [driverId], references: [id])
   status      DeliveryStatus @default(pending)
   collectedAt DateTime?
   deliveredAt DateTime?
   proofUrl    String?        // photo / e-signature URL
   note        String?
+  driverLat   Float?
+  driverLng   Float?
+  destLat     Float?
+  destLng     Float?
   createdAt   DateTime       @default(now())
   updatedAt   DateTime       @updatedAt
 }
