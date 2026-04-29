@@ -28,6 +28,12 @@ const MSOCKET_SHIMS = {
   'react-native/Libraries/WebSocket/WebSocket': path.resolve(projectRoot, 'shims/WebSocket.js'),
 };
 
+// setUpFuseboxReactDevToolsDispatcher.js calls Object.defineProperty with
+// configurable:false but the native side already defined the property, causing
+// "property is not writable". Redirect to a shim that guards the call.
+const FUSEBOX_MODULE = 'react-native/src/private/devsupport/rndevtools/setUpFuseboxReactDevToolsDispatcher';
+const FUSEBOX_SHIM = path.resolve(projectRoot, 'shims/setUpFuseboxReactDevToolsDispatcher.js');
+
 const _originalResolveRequest = config.resolver.resolveRequest;
 config.resolver.resolveRequest = (context, moduleName, platform) => {
   // Fix pnpm virtual entry path for expo-router
@@ -47,6 +53,15 @@ config.resolver.resolveRequest = (context, moduleName, platform) => {
     MSOCKET_SHIMS[moduleName]
   ) {
     return { filePath: MSOCKET_SHIMS[moduleName], type: 'sourceFile' };
+  }
+  // Guard Fusebox devtools dispatcher against non-writable property error.
+  // The originModulePath check prevents a resolver loop: the shim itself
+  // requires the original, so we must NOT re-intercept that inner call.
+  if (
+    (moduleName === FUSEBOX_MODULE || moduleName.includes('setUpFuseboxReactDevToolsDispatcher')) &&
+    !(context.originModulePath && context.originModulePath.includes('setUpFuseboxReactDevToolsDispatcher'))
+  ) {
+    return { filePath: FUSEBOX_SHIM, type: 'sourceFile' };
   }
   if (_originalResolveRequest) {
     return _originalResolveRequest(context, moduleName, platform);
