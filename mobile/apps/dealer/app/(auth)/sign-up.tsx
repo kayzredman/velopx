@@ -45,15 +45,20 @@ export default function SignUpScreen() {
       try {
         const startFlow = strategy === 'apple' ? startAppleOAuth : startGoogleOAuth
         const { createdSessionId, setActive: oAuthSetActive } = await startFlow({
-          redirectUrl: Linking.createURL('/'),
+          redirectUrl: Linking.createURL('/', { scheme: 'velopx-dealer' }),
         })
         if (createdSessionId && oAuthSetActive) {
           await oAuthSetActive({ session: createdSessionId })
           router.replace('/(app)')
         }
       } catch (err: unknown) {
-        const message =
-          err instanceof Error ? err.message : 'Sign up failed. Please try again.'
+        let message = 'Sign up failed. Please try again.'
+        if (err && typeof err === 'object' && 'errors' in err) {
+          const clerkErr = err as { errors: Array<{ message?: string }> }
+          message = clerkErr.errors?.[0]?.message ?? message
+        } else if (err instanceof Error && err.message && !err.message.includes('toString')) {
+          message = err.message
+        }
         setError(message)
       } finally {
         setOauthLoading(null)
@@ -78,7 +83,14 @@ export default function SignUpScreen() {
       await signUp.prepareEmailAddressVerification({ strategy: 'email_code' })
       setStep('verify')
     } catch (err: unknown) {
-      setError(err instanceof Error ? err.message : 'Sign up failed.')
+      let message = 'Sign up failed. Please try again.'
+      if (err && typeof err === 'object' && 'errors' in err) {
+        const clerkErr = err as { errors: Array<{ message?: string }> }
+        message = clerkErr.errors?.[0]?.message ?? message
+      } else if (err instanceof Error && err.message && !err.message.includes('toString')) {
+        message = err.message
+      }
+      setError(message)
     } finally {
       setLoading(false)
     }
@@ -99,7 +111,14 @@ export default function SignUpScreen() {
         setError('Verification incomplete. Try again.')
       }
     } catch (err: unknown) {
-      setError(err instanceof Error ? err.message : 'Verification failed.')
+      let message = 'Verification failed. Please try again.'
+      if (err && typeof err === 'object' && 'errors' in err) {
+        const clerkErr = err as { errors: Array<{ message?: string }> }
+        message = clerkErr.errors?.[0]?.message ?? message
+      } else if (err instanceof Error && err.message && !err.message.includes('toString')) {
+        message = err.message
+      }
+      setError(message)
     } finally {
       setLoading(false)
     }
