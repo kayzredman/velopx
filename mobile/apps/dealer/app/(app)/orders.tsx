@@ -39,8 +39,6 @@ const STATUS_COLOR: Record<string, string> = {
   disputed:   Colors.error,
 }
 
-const CONFIRMABLE_STATUSES = ['pending', 'confirmed', 'dispatched', 'delivered']
-
 export default function OrdersScreen() {
   const { apiFetch } = useApi()
   const [orders, setOrders] = useState<Order[]>([])

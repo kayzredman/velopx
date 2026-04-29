@@ -1,6 +1,8 @@
-import { useSignUp } from '@clerk/clerk-expo'
+import { useSignUp, useOAuth } from '@clerk/clerk-expo'
+import * as Linking from 'expo-linking'
+import * as WebBrowser from 'expo-web-browser'
 import { useRouter } from 'expo-router'
-import { useState } from 'react'
+import { useCallback, useState } from 'react'
 import {
   View,
   Text,
@@ -8,15 +10,23 @@ import {
   KeyboardAvoidingView,
   Platform,
   StyleSheet,
+  TouchableOpacity,
+  ActivityIndicator,
 } from 'react-native'
 import { SafeAreaView } from 'react-native-safe-area-context'
-import { Button, Input, Logo, Colors } from '@velopx/shared'
+import { Button, Input, Logo } from '@velopx/shared'
+import { Colors } from '@velopx/shared'
+
+WebBrowser.maybeCompleteAuthSession()
 
 type Step = 'form' | 'verify'
 
 export default function SignUpScreen() {
   const { signUp, setActive, isLoaded } = useSignUp()
   const router = useRouter()
+
+  const { startOAuthFlow: startAppleOAuth } = useOAuth({ strategy: 'oauth_apple' })
+  const { startOAuthFlow: startGoogleOAuth } = useOAuth({ strategy: 'oauth_google' })
 
   const [step, setStep] = useState<Step>('form')
   const [firstName, setFirstName] = useState('')
@@ -26,6 +36,36 @@ export default function SignUpScreen() {
   const [code, setCode] = useState('')
   const [error, setError] = useState('')
   const [loading, setLoading] = useState(false)
+  const [oauthLoading, setOauthLoading] = useState<'apple' | 'google' | null>(null)
+
+  const handleOAuth = useCallback(
+    async (strategy: 'apple' | 'google') => {
+      setError('')
+      setOauthLoading(strategy)
+      try {
+        const startFlow = strategy === 'apple' ? startAppleOAuth : startGoogleOAuth
+        const { createdSessionId, setActive: oAuthSetActive } = await startFlow({
+          redirectUrl: Linking.createURL('/', { scheme: 'velopx-garage' }),
+        })
+        if (createdSessionId && oAuthSetActive) {
+          await oAuthSetActive({ session: createdSessionId })
+          router.replace('/(app)')
+        }
+      } catch (err: unknown) {
+        let message = 'Sign up failed. Please try again.'
+        if (err && typeof err === 'object' && 'errors' in err) {
+          const clerkErr = err as { errors: Array<{ message?: string }> }
+          message = clerkErr.errors?.[0]?.message ?? message
+        } else if (err instanceof Error && err.message && !err.message.includes('toString')) {
+          message = err.message
+        }
+        setError(message)
+      } finally {
+        setOauthLoading(null)
+      }
+    },
+    [router, startAppleOAuth, startGoogleOAuth],
+  )
 
   async function handleSignUp() {
     if (!isLoaded) return
@@ -43,7 +83,14 @@ export default function SignUpScreen() {
       await signUp.prepareEmailAddressVerification({ strategy: 'email_code' })
       setStep('verify')
     } catch (err: unknown) {
-      setError(err instanceof Error ? err.message : 'Sign up failed.')
+      let message = 'Sign up failed. Please try again.'
+      if (err && typeof err === 'object' && 'errors' in err) {
+        const clerkErr = err as { errors: Array<{ message?: string }> }
+        message = clerkErr.errors?.[0]?.message ?? message
+      } else if (err instanceof Error && err.message && !err.message.includes('toString')) {
+        message = err.message
+      }
+      setError(message)
     } finally {
       setLoading(false)
     }
@@ -64,7 +111,14 @@ export default function SignUpScreen() {
         setError('Verification incomplete. Try again.')
       }
     } catch (err: unknown) {
-      setError(err instanceof Error ? err.message : 'Verification failed.')
+      let message = 'Verification failed. Please try again.'
+      if (err && typeof err === 'object' && 'errors' in err) {
+        const clerkErr = err as { errors: Array<{ message?: string }> }
+        message = clerkErr.errors?.[0]?.message ?? message
+      } else if (err instanceof Error && err.message && !err.message.includes('toString')) {
+        message = err.message
+      }
+      setError(message)
     } finally {
       setLoading(false)
     }
@@ -88,6 +142,28 @@ export default function SignUpScreen() {
               <Text style={styles.subtitle}>Join velopX as a garage</Text>
 
               <View style={styles.form}>
+                <SocialButton
+                  symbol=""
+                  label="Continue with Apple"
+                  loading={oauthLoading === 'apple'}
+                  disabled={loading || oauthLoading !== null}
+                  onPress={() => handleOAuth('apple')}
+                />
+                <SocialButton
+                  symbol="G"
+                  symbolColor="#4285F4"
+                  label="Continue with Google"
+                  loading={oauthLoading === 'google'}
+                  disabled={loading || oauthLoading !== null}
+                  onPress={() => handleOAuth('google')}
+                />
+
+                <View style={styles.divider}>
+                  <View style={styles.dividerLine} />
+                  <Text style={styles.dividerText}>or sign up with email</Text>
+                  <View style={styles.dividerLine} />
+                </View>
+
                 <View style={styles.row}>
                   <View style={styles.flex}>
                     <Input
@@ -196,6 +272,23 @@ const styles = StyleSheet.create({
   },
   form: { gap: 16 },
   row: { flexDirection: 'row', gap: 12 },
+  socialBtn: {
+    height: 52,
+    borderRadius: 12,
+    backgroundColor: Colors.navy800,
+    borderWidth: 1,
+    borderColor: Colors.navy700,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 10,
+  },
+  socialBtnDisabled: { opacity: 0.5 },
+  socialSymbol: { fontSize: 17, color: Colors.textPrimary, fontWeight: '700' },
+  socialLabel: { fontSize: 15, color: Colors.textPrimary, fontWeight: '500' },
+  divider: { flexDirection: 'row', alignItems: 'center', gap: 10, marginVertical: 4 },
+  dividerLine: { flex: 1, height: 1, backgroundColor: Colors.navy700 },
+  dividerText: { fontSize: 12, color: Colors.textMuted, textTransform: 'uppercase', letterSpacing: 0.6 },
   error: {
     color: Colors.error,
     fontSize: 13,
@@ -209,3 +302,39 @@ const styles = StyleSheet.create({
   footerText: { color: Colors.textSecondary, fontSize: 13 },
   link: { color: Colors.orange500, fontSize: 13 },
 })
+
+function SocialButton({
+  symbol,
+  symbolColor,
+  label,
+  loading,
+  disabled,
+  onPress,
+}: {
+  symbol: string
+  symbolColor?: string
+  label: string
+  loading: boolean
+  disabled: boolean
+  onPress: () => void
+}) {
+  return (
+    <TouchableOpacity
+      style={[styles.socialBtn, disabled && styles.socialBtnDisabled]}
+      onPress={onPress}
+      disabled={disabled}
+      activeOpacity={0.75}
+    >
+      {loading ? (
+        <ActivityIndicator color={Colors.textPrimary} size="small" />
+      ) : (
+        <>
+          <Text style={[styles.socialSymbol, symbolColor ? { color: symbolColor } : null]}>
+            {symbol}
+          </Text>
+          <Text style={styles.socialLabel}>{label}</Text>
+        </>
+      )}
+    </TouchableOpacity>
+  )
+}

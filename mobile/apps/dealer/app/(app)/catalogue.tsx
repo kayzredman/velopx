@@ -1,4 +1,3 @@
-import { useUser } from '@clerk/clerk-expo'
 import { useCallback, useEffect, useState } from 'react'
 import {
   View,
@@ -8,6 +7,7 @@ import {
   ActivityIndicator,
   StyleSheet,
   RefreshControl,
+  Alert,
 } from 'react-native'
 import { SafeAreaView } from 'react-native-safe-area-context'
 import { Colors, useApi } from '@velopx/shared'
@@ -31,7 +31,6 @@ const STOCK_COLOR: Record<string, string> = {
 const STOCK_LABEL: Record<string, string> = { in_stock: 'In Stock', limited: 'Limited', out_of_stock: 'Out of Stock' }
 
 export default function CatalogueScreen() {
-  const { user } = useUser()
   const { apiFetch } = useApi()
   const [parts, setParts] = useState<Part[]>([])
   const [loading, setLoading] = useState(true)
@@ -58,12 +57,25 @@ export default function CatalogueScreen() {
   }
 
   async function handleDelete(id: string) {
-    try {
-      await apiFetch(`/v1/parts/${id}`, { method: 'DELETE' })
-      setParts((prev) => prev.filter((p) => p.id !== id))
-    } catch {
-      setError('Delete failed. Try again.')
-    }
+    Alert.alert(
+      'Remove Listing',
+      'Are you sure you want to remove this part from your catalogue?',
+      [
+        { text: 'Cancel', style: 'cancel' },
+        {
+          text: 'Remove',
+          style: 'destructive',
+          onPress: async () => {
+            try {
+              await apiFetch(`/v1/parts/${id}`, { method: 'DELETE' })
+              setParts((prev) => prev.filter((p) => p.id !== id))
+            } catch {
+              setError('Delete failed. Try again.')
+            }
+          },
+        },
+      ],
+    )
   }
 
   if (loading) {
