@@ -2,6 +2,11 @@
 
 > These instructions are always active. They define the development workflow, agent roles, and quality gates for the VelopX platform.
 
+## Session Resume — Read These First on Every New Session
+1. `/memories/repo/velopx-system-state.md` — what's built, all routes, all screens
+2. `/memories/repo/velopx-build-status.md` — Sprint history + next Sprint priority order
+3. `/memories/repo/velopx-workflow.md` — workflow rules, QA gate, last commit, tech facts
+
 ---
 
 ## Project Overview
