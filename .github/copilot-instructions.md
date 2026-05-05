@@ -44,6 +44,7 @@ All development work is coordinated across three explicit roles. Before starting
 ### Declaring a Role
 
 Always open a task block with:
+
 ```
 [FRONTEND AGENT] — <task description>
 [BACKEND AGENT]  — <task description>
@@ -57,6 +58,7 @@ Always open a task block with:
 **Owns**: `mobile/`, `web/`, `mobile/packages/shared/`
 
 **Responsibilities**:
+
 - React Native screens (Expo Router), navigation, UI components
 - Next.js pages and layouts
 - Shared package components, hooks, constants
@@ -64,6 +66,7 @@ Always open a task block with:
 - Auth flows (Clerk), linking, deep links
 
 **Standards**:
+
 - Use `expo-router` file-based routing — no manual `Stack.Navigator` definitions
 - All auth screens must use `@clerk/clerk-expo` hooks (`useSignIn`, `useSignUp`, `useOAuth`)
 - Shared components live in `mobile/packages/shared/src/`
@@ -80,6 +83,7 @@ Always open a task block with:
 **Owns**: `backend/src/`, `prisma/schema.prisma`, `docker-compose.yml`
 
 **Responsibilities**:
+
 - Express API routes under `backend/src/routes/v1/`
 - Prisma schema changes and migrations
 - Kafka producers and consumers
@@ -88,6 +92,7 @@ Always open a task block with:
 - Webhook handlers
 
 **Standards**:
+
 - All routes versioned under `/v1/`
 - Every mutation emits a Kafka event for audit trail
 - Auth via `clerkAuth` middleware — never bypass
@@ -104,6 +109,7 @@ Always open a task block with:
 **Owns**: Nothing directly — reads and validates everything
 
 **Responsibilities**:
+
 - Verify completed work against `velopx-product-architecture.md` spec
 - Check design consistency across all three mobile apps
 - Confirm builds run without errors in simulator
@@ -111,12 +117,14 @@ Always open a task block with:
 - Flag any spec deviations, missing features, or regressions
 
 **QA Checklist** (run after every completed task):
+
 1. Does the implementation match the spec in `velopx-product-architecture.md`?
 2. Are all three mobile apps consistent where they share features (auth, error handling)?
 3. Does the UI match the intent in `velopx-mockups.html`?
 4. Are there any TypeScript errors (`get_errors`)?
 5. Do backend route shapes match what the frontend `useApi` hook expects?
 6. Are audit trail events being emitted for all mutations?
+7. **Route conflict check**: For every new screen file, verify no duplicate route exists elsewhere in the same app's `app/` tree (e.g., `app/foo/[id].tsx` vs `app/(group)/foo/[id].tsx` both resolve to `/foo/[id]`). Use `file_search` to confirm uniqueness.
 
 **Output format**: Explicit PASS / FAIL checklist. Blockers listed with file + line reference.
 
@@ -133,11 +141,13 @@ Always open a task block with:
 5. Only after `[QA PASS]`: work is committed and pushed
 
 ### Commit Convention (post-QA pass only)
+
 ```
 feat(scope): description
 fix(scope): description
 refactor(scope): description
 ```
+
 Scope examples: `dealer`, `garage`, `driver`, `backend`, `shared`, `web`
 
 ---
@@ -151,6 +161,7 @@ I self-assign tasks in this order of priority:
 3. **Polish** — UX improvements, error states, loading states
 
 Current backlog (in priority order):
+
 1. [BLOCKER] Garage app "App entry not found" — root cause unknown
 2. [PENDING COMMIT] All driver/garage shims, expo-crypto, Clerk error handling, dealer catalogue/orders cleanup
 3. [FEATURE] Dealer catalogue: parts listing, create/edit/delete
@@ -164,26 +175,34 @@ Current backlog (in priority order):
 ## Known Technical Context
 
 ### RN 0.81.5 Shim Setup (all three apps)
+
 Each app has three shims in `shims/` directory, referenced in `metro.config.js`:
+
 - `shims/getDevServer.js` — fixes `getDevServer is not a function`
 - `shims/WebSocket.js` — fixes `WebSocket constructor not callable`
 - `shims/setUpFuseboxReactDevToolsDispatcher.js` — guards `Object.defineProperty` for Fusebox
 
 ### Clerk Error Handling Pattern
+
 ```tsx
-let message = 'Sign in failed. Please try again.'
-if (err && typeof err === 'object' && 'errors' in err) {
-  const clerkErr = err as { errors: Array<{ message?: string }> }
-  message = clerkErr.errors?.[0]?.message ?? message
-} else if (err instanceof Error && err.message && !err.message.includes('toString')) {
-  message = err.message
+let message = "Sign in failed. Please try again.";
+if (err && typeof err === "object" && "errors" in err) {
+  const clerkErr = err as { errors: Array<{ message?: string }> };
+  message = clerkErr.errors?.[0]?.message ?? message;
+} else if (
+  err instanceof Error &&
+  err.message &&
+  !err.message.includes("toString")
+) {
+  message = err.message;
 }
-setError(message)
+setError(message);
 ```
 
 ### App Identifiers
-| App    | Bundle ID           | Scheme         |
-|--------|---------------------|----------------|
-| Dealer | com.velopx.dealer   | velopx-dealer  |
-| Driver | com.velopx.driver   | velopx-driver  |
-| Garage | com.velopx.garage   | velopx-garage  |
+
+| App    | Bundle ID         | Scheme        |
+| ------ | ----------------- | ------------- |
+| Dealer | com.velopx.dealer | velopx-dealer |
+| Driver | com.velopx.driver | velopx-driver |
+| Garage | com.velopx.garage | velopx-garage |

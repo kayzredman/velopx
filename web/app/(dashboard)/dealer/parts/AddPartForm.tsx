@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useTransition } from 'react'
+import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 
 const EMPTY = {
@@ -14,12 +14,12 @@ const EMPTY = {
   description: '',
 }
 
-export function AddPartForm() {
+export function AddPartForm({ onCreated }: { onCreated?: () => void } = {}) {
   const router = useRouter()
   const [open, setOpen] = useState(false)
   const [form, setForm] = useState(EMPTY)
   const [error, setError] = useState('')
-  const [isPending, startTransition] = useTransition()
+  const [isPending, setIsPending] = useState(false)
 
   function set(field: keyof typeof EMPTY, value: string) {
     setForm((f) => ({ ...f, [field]: value }))
@@ -34,7 +34,8 @@ export function AddPartForm() {
       return
     }
 
-    startTransition(async () => {
+    setIsPending(true)
+    void (async () => {
       try {
         const res = await fetch('/api/parts', {
           method: 'POST',
@@ -52,11 +53,17 @@ export function AddPartForm() {
         }
         setForm(EMPTY)
         setOpen(false)
-        router.refresh()
+        if (onCreated) {
+          onCreated()
+        } else {
+          router.refresh()
+        }
       } catch (err) {
         setError(err instanceof Error ? err.message : 'Failed to add part.')
+      } finally {
+        setIsPending(false)
       }
-    })
+    })()
   }
 
   return (

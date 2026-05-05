@@ -15,22 +15,25 @@ type DeliveryStatusValue =
   | 'delivered'
   | 'confirmed'
   | 'disputed'
+  | 'failed'
 
 // Valid state machine transitions — enforced server-side
 const VALID_TRANSITIONS: Record<DeliveryStatusValue, DeliveryStatusValue[]> = {
   pending:    ['assigned'],
-  assigned:   ['collected'],
-  collected:  ['in_transit'],
-  in_transit: ['delivered'],
+  assigned:   ['collected', 'failed'],
+  collected:  ['in_transit', 'failed'],
+  in_transit: ['delivered', 'failed'],
   delivered:  ['confirmed', 'disputed'],
   confirmed:  [],
   disputed:   [],
+  failed:     [],
 }
 
 const UpdateStatusSchema = z.object({
-  status: z.enum(['assigned', 'collected', 'in_transit', 'delivered', 'confirmed', 'disputed']),
+  status: z.enum(['assigned', 'collected', 'in_transit', 'delivered', 'confirmed', 'disputed', 'failed']),
   driverId: z.string().cuid().optional(),  // required when → assigned
   proofUrl: z.string().url().optional(),   // required when → delivered
+  failureReason: z.string().max(200).optional(), // required when → failed
   note: z.string().max(500).optional(),
 })
 
@@ -38,6 +41,25 @@ const LocationUpdateSchema = z.object({
   lat: z.number().finite(),
   lng: z.number().finite(),
 })
+
+// ── GET /v1/deliveries/drivers — list available drivers (dealer/admin only)
+router.get(
+  '/drivers',
+  requireClerkAuth,
+  requireRole('dealer_owner', 'dealer_staff', 'platform_admin'),
+  async (req, res, next) => {
+    try {
+      const drivers = await prisma.user.findMany({
+        where: { role: 'driver' },
+        select: { id: true, name: true, email: true, createdAt: true },
+        orderBy: { name: 'asc' },
+      })
+      res.json({ data: drivers })
+    } catch (err) {
+      next(err)
+    }
+  },
+)
 
 // ── GET /v1/deliveries — scoped list by role
 router.get('/', requireClerkAuth, async (req, res, next) => {
@@ -61,6 +83,7 @@ router.get('/', requireClerkAuth, async (req, res, next) => {
     const deliveries = await prisma.delivery.findMany({
       where,
       include: {
+        driver: { select: { id: true, name: true, email: true } },
         order: {
           select: {
             id: true,
@@ -111,7 +134,8 @@ router.get('/:id', requireClerkAuth, async (req, res, next) => {
     const shaped = {
       ...delivery,
       driverLocation: delivery.driverLat != null ? { lat: delivery.driverLat, lng: delivery.driverLng } : null,
-      destination: delivery.destLat != null ? { lat: delivery.destLat, lng: delivery.destLng } : null,
+      destination: delivery.destLat != null ? { lat: delivery.destLat, lng: delivery.destLng, address: delivery.destAddress } : null,
+      source: delivery.sourceLat != null ? { lat: delivery.sourceLat, lng: delivery.sourceLng, address: delivery.sourceAddress } : null,
       estimatedMinutes: null,
       distanceKm: null,
       driver: delivery.driver,
@@ -145,8 +169,22 @@ router.post(
       const existing = await prisma.delivery.findUnique({ where: { orderId } })
       if (existing) throw createHttpError(409, 'A delivery already exists for this order')
 
+      // ── Resolve destination: order-level override > buyer's profile location
+      const buyer = await prisma.user.findUnique({
+        where: { id: order.buyerId },
+        select: { lat: true, lng: true, address: true },
+      })
+      const destLat     = order.deliveryLat     ?? buyer?.lat     ?? null
+      const destLng     = order.deliveryLng     ?? buyer?.lng     ?? null
+      const destAddress = order.deliveryAddress ?? buyer?.address ?? null
+
+      // ── Resolve source: dealer's warehouse / business location
+      const sourceLat     = user.lat     ?? null
+      const sourceLng     = user.lng     ?? null
+      const sourceAddress = user.address ?? null
+
       const delivery = await prisma.delivery.create({
-        data: { orderId, status: 'pending' },
+        data: { orderId, status: 'pending', destLat, destLng, destAddress, sourceLat, sourceLng, sourceAddress },
         include: {
           order: { select: { id: true, claimReference: true, buyerId: true } },
         },
@@ -208,8 +246,17 @@ router.patch('/:id/status', requireClerkAuth, async (req, res, next) => {
       throw createHttpError(403, 'Only drivers can update collection and transit status')
     }
 
-    if (nextStatus === 'delivered' && !body.proofUrl) {
-      throw createHttpError(400, 'proofUrl is required when marking a delivery as delivered')
+    // proofUrl is encouraged but optional — a photo upload service can enforce this later
+
+    if (
+      nextStatus === 'failed' &&
+      !['driver', 'platform_admin'].includes(user.role)
+    ) {
+      throw createHttpError(403, 'Only drivers can report a delivery exception')
+    }
+
+    if (nextStatus === 'failed' && !body.failureReason) {
+      throw createHttpError(400, 'failureReason is required when reporting a delivery exception')
     }
 
     if (
@@ -222,7 +269,12 @@ router.patch('/:id/status', requireClerkAuth, async (req, res, next) => {
     const updateData: Record<string, unknown> = { status: nextStatus }
     if (body.driverId) updateData.driverId = body.driverId
     if (body.proofUrl) updateData.proofUrl = body.proofUrl
-    if (body.note !== undefined) updateData.note = body.note
+    // Store failureReason in note field (prefixed) when failing
+    if (nextStatus === 'failed' && body.failureReason) {
+      updateData.note = `EXCEPTION:${body.failureReason}${body.note ? ` — ${body.note}` : ''}`
+    } else if (body.note !== undefined) {
+      updateData.note = body.note
+    }
     if (nextStatus === 'collected') updateData.collectedAt = new Date()
     if (nextStatus === 'delivered') updateData.deliveredAt = new Date()
 

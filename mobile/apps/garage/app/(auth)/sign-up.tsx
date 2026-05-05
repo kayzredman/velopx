@@ -78,6 +78,7 @@ export default function SignUpScreen() {
         lastName,
         emailAddress: email.trim().toLowerCase(),
         password,
+        unsafeMetadata: { role: 'garage_owner' },
       })
 
       await signUp.prepareEmailAddressVerification({ strategy: 'email_code' })

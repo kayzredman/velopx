@@ -1,4 +1,4 @@
-import { kafkaProducer } from './producer'
+import { publishEvent as sendKafkaEvent } from './producer'
 
 type EventPayload = Record<string, unknown>
 
@@ -12,17 +12,10 @@ export async function publishEvent(
   key: string | null,
   payload: EventPayload,
 ): Promise<void> {
-  kafkaProducer
-    .send({
-      topic,
-      messages: [
-        {
-          key,
-          value: JSON.stringify({ ...payload, timestamp: new Date().toISOString() }),
-        },
-      ],
-    })
-    .catch((err: unknown) => {
-      console.error(`[events] Failed to publish to ${topic}:`, err)
-    })
+  sendKafkaEvent(topic, key ?? '', {
+    ...payload,
+    timestamp: new Date().toISOString(),
+  }).catch((err: unknown) => {
+    console.error(`[events] Failed to publish to ${topic}:`, err)
+  })
 }

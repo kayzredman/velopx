@@ -1,5 +1,6 @@
 import { Router } from 'express'
 import { z } from 'zod'
+import type { Prisma } from '@prisma/client'
 import { requireClerkAuth, requireRole, getRequestAuth } from '../../middleware/clerkAuth'
 import { prisma } from '../../db/prisma'
 import { createHttpError } from '../../middleware/errorHandler'
@@ -25,17 +26,35 @@ const SearchPartsSchema = z.object({
   q: z.string().optional(),
   condition: z.enum(['oem', 'aftermarket', 'used']).optional(),
   country: z.string().optional(),
+  mine: z.coerce.boolean().optional(),
   page: z.coerce.number().int().positive().default(1),
   limit: z.coerce.number().int().min(1).max(100).default(20),
 })
 
-// ── GET /v1/parts — public search
+// ── GET /v1/parts — public search (pass mine=true to filter to own listings)
 router.get('/', async (req, res, next) => {
   try {
-    const { q, condition, country, page, limit } = SearchPartsSchema.parse(req.query)
+    const { q, condition, country, mine, page, limit } = SearchPartsSchema.parse(req.query)
     const skip = (page - 1) * limit
 
+    // If mine=true, require auth and filter to the caller's dealerId
+    let ownerId: string | undefined
+    if (mine) {
+      const auth = getRequestAuth(req)
+      if (!auth?.userId) {
+        res.status(401).json({ error: 'Authentication required for mine=true' })
+        return
+      }
+      const user = await prisma.user.findUnique({ where: { clerkId: auth.userId }, select: { id: true } })
+      if (!user) {
+        res.status(401).json({ error: 'User not found' })
+        return
+      }
+      ownerId = user.id
+    }
+
     const where = {
+      ...(ownerId && { dealerId: ownerId }),
       ...(condition && { condition }),
       ...(country && { country }),
       ...(q && {
@@ -99,6 +118,7 @@ router.post(
       const part = await prisma.part.create({
         data: {
           ...data,
+          attributes: data.attributes as unknown as Prisma.InputJsonValue,
           price: data.price,
           dealerId: user.id,
         },
@@ -129,9 +149,15 @@ router.patch(
         throw createHttpError(403, 'You can only update your own listings')
       }
 
+      const rawUpdate = CreatePartSchema.partial().parse(req.body)
       const updated = await prisma.part.update({
         where: { id: req.params.id },
-        data: CreatePartSchema.partial().parse(req.body),
+        data: {
+          ...rawUpdate,
+          ...(rawUpdate.attributes !== undefined && {
+            attributes: rawUpdate.attributes as unknown as Prisma.InputJsonValue,
+          }),
+        },
       })
 
       res.json({ data: updated })

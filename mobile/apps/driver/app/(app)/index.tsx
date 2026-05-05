@@ -43,80 +43,13 @@ const STATUS_COLOR: Record<string, string> = {
   disputed:   Colors.error,
 }
 
-const MOCK_DELIVERIES: Delivery[] = __DEV__ ? [
-  {
-    id: 'mock-001',
-    status: 'assigned',
-    proofUrl: null,
-    note: null,
-    createdAt: new Date(Date.now() - 1000 * 60 * 20).toISOString(),
-    order: {
-      id: 'ord-a1b2c3d4',
-      claimReference: 'CLM-2026-00142',
-      totalAmount: '18500',
-      currency: 'KES',
-      items: [
-        { id: 'i1', quantity: 2, part: { id: 'p1', name: 'Brake Pad Set (Front)' } },
-        { id: 'i2', quantity: 1, part: { id: 'p2', name: 'Brake Disc' } },
-      ],
-    },
-  },
-  {
-    id: 'mock-002',
-    status: 'in_transit',
-    proofUrl: null,
-    note: null,
-    createdAt: new Date(Date.now() - 1000 * 60 * 90).toISOString(),
-    order: {
-      id: 'ord-e5f6g7h8',
-      claimReference: null,
-      totalAmount: '7200',
-      currency: 'KES',
-      items: [
-        { id: 'i3', quantity: 1, part: { id: 'p3', name: 'Oil Filter' } },
-        { id: 'i4', quantity: 4, part: { id: 'p4', name: 'Engine Oil (1L)' } },
-      ],
-    },
-  },
-  {
-    id: 'mock-003',
-    status: 'collected',
-    proofUrl: null,
-    note: null,
-    createdAt: new Date(Date.now() - 1000 * 60 * 45).toISOString(),
-    order: {
-      id: 'ord-i9j0k1l2',
-      claimReference: 'CLM-2026-00139',
-      totalAmount: '32000',
-      currency: 'KES',
-      items: [
-        { id: 'i5', quantity: 1, part: { id: 'p5', name: 'Alternator' } },
-      ],
-    },
-  },
-  {
-    id: 'mock-004',
-    status: 'delivered',
-    proofUrl: 'https://example.com/proof.jpg',
-    note: 'Left with reception',
-    createdAt: new Date(Date.now() - 1000 * 60 * 60 * 3).toISOString(),
-    order: {
-      id: 'ord-m3n4o5p6',
-      claimReference: null,
-      totalAmount: '4500',
-      currency: 'KES',
-      items: [
-        { id: 'i6', quantity: 2, part: { id: 'p6', name: 'Wiper Blade' } },
-      ],
-    },
-  },
-] : []
+
 
 export default function DriverDeliveriesScreen() {
   const { apiFetch } = useApi()
   const router = useRouter()
-  const [deliveries, setDeliveries] = useState<Delivery[]>(MOCK_DELIVERIES)
-  const [loading, setLoading] = useState(!__DEV__)
+  const [deliveries, setDeliveries] = useState<Delivery[]>([])
+  const [loading, setLoading] = useState(true)
   const [refreshing, setRefreshing] = useState(false)
   const [updatingId, setUpdatingId] = useState<string | null>(null)
 
@@ -130,10 +63,6 @@ export default function DriverDeliveriesScreen() {
   }, [apiFetch])
 
   useEffect(() => {
-    if (__DEV__) {
-      setLoading(false)
-      return
-    }
     fetchDeliveries().finally(() => setLoading(false))
   }, [fetchDeliveries])
 
@@ -145,8 +74,9 @@ export default function DriverDeliveriesScreen() {
 
   async function advanceStatus(delivery: Delivery) {
     const NEXT: Record<string, string> = {
-      assigned: 'collected',
-      collected: 'in_transit',
+      assigned:   'collected',
+      collected:  'in_transit',
+      in_transit: 'delivered',
     }
     const next = NEXT[delivery.status]
     if (!next) return

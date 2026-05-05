@@ -60,7 +60,7 @@ router.post(
 async function handleClerkEvent(event: ClerkWebhookEvent): Promise<void> {
   switch (event.type) {
     case 'user.created': {
-      const { id, email_addresses, first_name, last_name, public_metadata } = event.data
+      const { id, email_addresses, first_name, last_name, public_metadata, unsafe_metadata } = event.data
       const primaryEmail = email_addresses.find((e) => e.id === event.data.primary_email_address_id)
 
       await prisma.user.upsert({
@@ -69,7 +69,7 @@ async function handleClerkEvent(event: ClerkWebhookEvent): Promise<void> {
           clerkId: id,
           email: primaryEmail?.email_address ?? '',
           name: [first_name, last_name].filter(Boolean).join(' ') || undefined,
-          role: (public_metadata?.role as UserRole) ?? 'driver',
+          role: ((unsafe_metadata?.role ?? public_metadata?.role) as UserRole) ?? 'driver',
         },
         update: {
           email: primaryEmail?.email_address ?? undefined,
@@ -110,7 +110,7 @@ async function handleClerkEvent(event: ClerkWebhookEvent): Promise<void> {
 }
 
 // Read raw body from request (needed before json middleware runs on this route)
-function getRawBody(req: Router extends (...args: infer _) => unknown ? never : import('express').Request): Promise<string> {
+function getRawBody(req: import('express').Request): Promise<string> {
   return new Promise((resolve, reject) => {
     let data = ''
     req.setEncoding('utf8')
@@ -130,6 +130,7 @@ interface ClerkWebhookEvent {
     first_name: string | null
     last_name: string | null
     public_metadata: Record<string, unknown>
+    unsafe_metadata: Record<string, unknown>
   }
 }
 

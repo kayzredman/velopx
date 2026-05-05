@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from 'react'
+import { useState } from 'react'
 import {
   View,
   Text,
@@ -7,9 +7,10 @@ import {
   StyleSheet,
   RefreshControl,
   TouchableOpacity,
+  TextInput,
 } from 'react-native'
 import { SafeAreaView } from 'react-native-safe-area-context'
-import { Colors, useApi } from '@velopx/shared'
+import { Colors, useApi, useLoadMore } from '@velopx/shared'
 
 interface QuoteItem {
   id: string
@@ -37,29 +38,15 @@ const STATUS_COLOR: Record<string, string> = {
 
 export default function QuotesScreen() {
   const { apiFetch } = useApi()
-  const [quotes, setQuotes] = useState<Quote[]>([])
-  const [loading, setLoading] = useState(true)
-  const [refreshing, setRefreshing] = useState(false)
+  const { items: quotes, loading, loadingMore, refreshing, hasMore, total,
+          query, setQuery, onRefresh, onLoadMore, updateItem } = useLoadMore<Quote>({
+    buildPath: (page, q) => {
+      const params = new URLSearchParams({ limit: '20', page: String(page) })
+      if (q.trim()) params.set('q', q.trim())
+      return `/v1/quotes?${params}`
+    },
+  })
   const [updatingId, setUpdatingId] = useState<string | null>(null)
-
-  const fetchQuotes = useCallback(async () => {
-    try {
-      const res = await apiFetch<{ data: Quote[] }>('/v1/quotes')
-      setQuotes(res.data)
-    } catch {
-      // keep existing state
-    }
-  }, [apiFetch])
-
-  useEffect(() => {
-    fetchQuotes().finally(() => setLoading(false))
-  }, [fetchQuotes])
-
-  async function onRefresh() {
-    setRefreshing(true)
-    await fetchQuotes()
-    setRefreshing(false)
-  }
 
   async function handleStatusChange(id: string, status: 'accepted' | 'declined') {
     setUpdatingId(id)
@@ -68,7 +55,7 @@ export default function QuotesScreen() {
         method: 'PATCH',
         body: JSON.stringify({ status }),
       })
-      setQuotes((prev) => prev.map((q) => (q.id === id ? { ...q, status } : q)))
+      updateItem(id, { status })
     } finally {
       setUpdatingId(null)
     }
@@ -86,7 +73,19 @@ export default function QuotesScreen() {
     <SafeAreaView style={styles.safe}>
       <View style={styles.header}>
         <Text style={styles.title}>Quotes</Text>
-        <Text style={styles.count}>{quotes.length} quote{quotes.length !== 1 ? 's' : ''}</Text>
+        <Text style={styles.count}>{total} quote{total !== 1 ? 's' : ''}</Text>
+      </View>
+
+      <View style={styles.searchRow}>
+        <TextInput
+          style={styles.searchInput}
+          value={query}
+          onChangeText={setQuery}
+          placeholder="Search by claim reference…"
+          placeholderTextColor={Colors.textSecondary}
+          returnKeyType="search"
+          clearButtonMode="while-editing"
+        />
       </View>
 
       <FlatList
@@ -94,11 +93,22 @@ export default function QuotesScreen() {
         keyExtractor={(q) => q.id}
         contentContainerStyle={styles.list}
         refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={Colors.orange500} />}
+        onEndReached={onLoadMore}
+        onEndReachedThreshold={0.3}
         ListEmptyComponent={
           <View style={styles.emptyBox}>
             <Text style={styles.emptyText}>No quotes yet.</Text>
             <Text style={styles.emptySubtext}>Request quotes from dealers via parts search.</Text>
           </View>
+        }
+        ListFooterComponent={
+          loadingMore ? (
+            <ActivityIndicator color={Colors.orange500} style={{ paddingVertical: 16 }} />
+          ) : hasMore ? (
+            <TouchableOpacity onPress={onLoadMore} style={styles.loadMoreBtn}>
+              <Text style={styles.loadMoreText}>Load More</Text>
+            </TouchableOpacity>
+          ) : null
         }
         renderItem={({ item }) => (
           <View style={styles.card}>
@@ -187,4 +197,8 @@ const styles = StyleSheet.create({
   emptyBox: { alignItems: 'center', paddingTop: 60 },
   emptyText: { color: Colors.textSecondary, fontSize: 14 },
   emptySubtext: { color: Colors.textMuted, fontSize: 12, marginTop: 6 },
+  searchRow: { paddingHorizontal: 20, paddingBottom: 12 },
+  searchInput: { backgroundColor: Colors.navy900, borderWidth: 1, borderColor: Colors.navy700, borderRadius: 10, paddingHorizontal: 14, paddingVertical: 9, fontSize: 14, color: Colors.textPrimary },
+  loadMoreBtn: { alignItems: 'center', paddingVertical: 16 },
+  loadMoreText: { fontSize: 14, color: Colors.orange500, fontWeight: '600' },
 })

@@ -2,23 +2,24 @@ import 'dotenv/config'
 import app from './app'
 import { connectKafka, disconnectKafka } from './kafka/producer'
 import { startAuditConsumer } from './kafka/consumers/auditConsumer'
+import { startPaymentConsumer } from './kafka/consumers/paymentConsumer'
 import { prisma } from './db/prisma'
 
 const PORT = process.env.PORT || 3000
 
 async function bootstrap() {
-  try {
-    await connectKafka()
-    await startAuditConsumer()
-    console.log('✓ Kafka connected')
+  // Start HTTP server immediately — don't block on Kafka
+  app.listen(PORT, () => {
+    console.log(`✓ velopX API running on :${PORT}`)
+  })
 
-    app.listen(PORT, () => {
-      console.log(`✓ velopX API running on :${PORT}`)
-    })
-  } catch (err) {
-    console.error('Bootstrap failed:', err)
-    process.exit(1)
-  }
+  // Connect Kafka in background — failures are non-fatal
+  // Both consumers start together; either can fail independently without
+  // taking down the other or the HTTP server.
+  connectKafka()
+    .then(() => Promise.all([startAuditConsumer(), startPaymentConsumer()]))
+    .then(() => console.log('✓ Kafka connected (audit + payment consumers running)'))
+    .catch((err) => console.warn('⚠ Kafka unavailable (async processing disabled):', (err as Error).message))
 }
 
 async function shutdown() {

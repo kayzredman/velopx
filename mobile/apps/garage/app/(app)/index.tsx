@@ -17,23 +17,27 @@ export default function GarageDashboard() {
   const router = useRouter()
   const [stats, setStats] = useState<DashboardStats | null>(null)
   const [refreshing, setRefreshing] = useState(false)
+  const [firstActiveDeliveryId, setFirstActiveDeliveryId] = useState<string | null>(null)
 
   const fetchStats = useCallback(async () => {
     try {
       const [quotesRes, ordersRes, deliveriesRes] = await Promise.all([
         apiFetch<{ data: { status: string }[] }>('/v1/quotes'),
         apiFetch<{ data: { status: string }[] }>('/v1/orders'),
-        apiFetch<{ data: { status: string }[] }>('/v1/deliveries'),
+        apiFetch<{ data: { id: string; status: string }[] }>('/v1/deliveries'),
       ])
+
+      const activeDeliveries = deliveriesRes.data.filter((d) =>
+        ['assigned', 'collected', 'in_transit'].includes(d.status),
+      )
+      setFirstActiveDeliveryId(activeDeliveries[0]?.id ?? null)
 
       setStats({
         activeQuotes: quotesRes.data.filter((q) => q.status === 'pending').length,
         openOrders: ordersRes.data.filter((o) =>
           ['pending', 'confirmed', 'dispatched'].includes(o.status),
         ).length,
-        pendingDeliveries: deliveriesRes.data.filter((d) =>
-          ['assigned', 'collected', 'in_transit'].includes(d.status),
-        ).length,
+        pendingDeliveries: activeDeliveries.length,
       })
     } catch {
       setStats({ activeQuotes: 0, openOrders: 0, pendingDeliveries: 0 })
@@ -75,7 +79,7 @@ export default function GarageDashboard() {
               <TouchableOpacity
                 style={styles.trackBtn}
                 onPress={() =>
-                  router.push({ pathname: '/inbound/[id]', params: { id: 'mock-del-1' } })
+                  router.push({ pathname: '/inbound/[id]', params: { id: firstActiveDeliveryId ?? '' } })
                 }
               >
                 <Text style={styles.trackBtnText}>Track Inbound →</Text>

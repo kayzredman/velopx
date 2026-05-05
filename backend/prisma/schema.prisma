@@ -69,6 +69,24 @@ enum DeliveryStatus {
   delivered
   confirmed
   disputed
+  failed
+}
+
+enum PaymentStatus {
+  pending
+  processing
+  completed
+  failed
+  refunded
+  disputed
+}
+
+enum PaymentMethod {
+  mobile_money
+  card
+  bank_transfer
+  cash_on_delivery
+  purchase_order
 }
 
 // ─── Models ───────────────────────────────────────────────────────────────────
@@ -95,11 +113,20 @@ model User {
   createdAt      DateTime      @default(now())
   updatedAt      DateTime      @updatedAt
 
+  // ── Location (garage/buyer sets once; becomes default delivery destination)
+  lat     Float?   // WGS-84 latitude
+  lng     Float?   // WGS-84 longitude
+  address String?  // Human-readable address (street, area, city)
+
   parts              Part[]
   quotes             Quote[]
   orders             Order[]
+  payments           Payment[]    @relation("PayerPayments")
   auditEvents        AuditEvent[]
   assignedDeliveries Delivery[]   @relation("DriverDeliveries")
+  assessorClaims     Claim[]      @relation("AssessorClaims")
+  jobCards           JobCard[]    @relation("GarageJobCards")
+  raisedDisputes     Dispute[]    @relation("RaisedDisputes")
 
   @@index([clerkId])
   @@index([organisationId])
@@ -122,8 +149,9 @@ model Part {
   createdAt   DateTime      @default(now())
   updatedAt   DateTime      @updatedAt
 
-  quoteItems QuoteItem[]
-  orderItems OrderItem[]
+  quoteItems      QuoteItem[]
+  orderItems      OrderItem[]
+  claimLineItems  ClaimLineItem[]
 
   @@index([oemNumber])
   @@index([dealerId])
@@ -173,10 +201,21 @@ model Order {
   currency       String
   items          OrderItem[]
   delivery       Delivery?
+  payment        Payment?
+  disputes       Dispute[]
+  jobCardId      String?
+  jobCard        JobCard?    @relation("JobCardOrders", fields: [jobCardId], references: [id])
+
+  // ── Per-order delivery location override (buyer sets this if car is not at main address)
+  deliveryLat     Float?   // overrides User.lat when set
+  deliveryLng     Float?   // overrides User.lng when set
+  deliveryAddress String?  // overrides User.address when set
+
   createdAt      DateTime    @default(now())
   updatedAt      DateTime    @updatedAt
 
   @@index([buyerId])
+  @@index([jobCardId])
   @@index([claimReference])
   @@index([status])
 }
@@ -206,12 +245,43 @@ model Delivery {
   deliveredAt DateTime?
   proofUrl    String?        // photo / e-signature URL
   note        String?
-  driverLat   Float?
-  driverLng   Float?
-  destLat     Float?
-  destLng     Float?
-  createdAt   DateTime       @default(now())
+  driverLat     Float?
+  driverLng     Float?
+  destLat       Float?
+  destLng       Float?
+  destAddress   String?  // copied from order override or buyer's profile address
+  sourceLat     Float?   // dealer warehouse / pickup latitude
+  sourceLng     Float?   // dealer warehouse / pickup longitude
+  sourceAddress String?  // dealer warehouse / pickup address
+  createdAt     DateTime       @default(now())
   updatedAt   DateTime       @updatedAt
+}
+
+model Payment {
+  id                String        @id @default(cuid())
+  orderId           String        @unique
+  order             Order         @relation(fields: [orderId], references: [id])
+  payerId           String
+  payer             User          @relation("PayerPayments", fields: [payerId], references: [id])
+  amount            Decimal       @db.Decimal(12, 2)
+  currency          String
+  method            PaymentMethod
+  status            PaymentStatus @default(pending)
+  provider          String?       // 'flutterwave' | 'paystack' | 'dpo' etc.
+  providerRef       String?       // provider transaction ID
+  providerCheckoutUrl String?     // redirect URL for web checkout
+  phoneNumber       String?       // mobile money phone number
+  failureReason     String?
+  metadata          Json?         // provider-specific payload
+  initiatedAt       DateTime      @default(now())
+  completedAt       DateTime?
+  createdAt         DateTime      @default(now())
+  updatedAt         DateTime      @updatedAt
+
+  @@index([orderId])
+  @@index([payerId])
+  @@index([status])
+  @@index([providerRef])
 }
 
 // Append-only — no updates, no deletes at the application layer
@@ -238,4 +308,161 @@ model AuditEvent {
   @@index([actionType])
   @@index([claimReference])
   @@index([createdAt])
+}
+
+// ─── Claims ───────────────────────────────────────────────────────────────────
+
+enum ClaimStatus {
+  open
+  under_review
+  closed
+}
+
+enum ClaimFlag {
+  ok
+  review
+  flagged
+}
+
+enum ClaimOutcome {
+  approved
+  adjusted
+  rejected
+}
+
+model Claim {
+  id               String        @id @default(cuid())
+  assessorId       String
+  assessor         User          @relation("AssessorClaims", fields: [assessorId], references: [id])
+  insurerOrgId     String?
+  garageName       String?
+  claimReference   String        @unique
+  vehicleProfile   Json?         // { make, model, year, vin, reg }
+  invoiceAmount    Decimal       @db.Decimal(12, 2)
+  benchmarkAmount  Decimal?      @db.Decimal(12, 2)
+  currency         String        @default("GHS")
+  status           ClaimStatus   @default(open)
+  flag             ClaimFlag     @default(ok)
+  outcome          ClaimOutcome?
+  lineItems        ClaimLineItem[]
+  createdAt        DateTime      @default(now())
+  updatedAt        DateTime      @updatedAt
+
+  @@index([assessorId])
+  @@index([claimReference])
+  @@index([status])
+  @@index([flag])
+}
+
+model ClaimLineItem {
+  id             String   @id @default(cuid())
+  claimId        String
+  claim          Claim    @relation(fields: [claimId], references: [id], onDelete: Cascade)
+  partId         String?
+  part           Part?    @relation(fields: [partId], references: [id])
+  partName       String
+  oemNumber      String?
+  invoicePrice   Decimal  @db.Decimal(12, 2)
+  benchmarkLow   Decimal? @db.Decimal(12, 2)
+  benchmarkHigh  Decimal? @db.Decimal(12, 2)
+  deviation      Float?
+  currency       String   @default("GHS")
+  createdAt      DateTime @default(now())
+
+  @@index([claimId])
+}
+
+// ─── Disputes ─────────────────────────────────────────────────────────────────
+
+enum DisputeType {
+  wrong_part
+  damaged_on_delivery
+  not_delivered
+  incorrect_listing
+  invoice_dispute
+}
+
+enum DisputeStatus {
+  open
+  under_review
+  resolved
+  escalated
+  closed
+}
+
+model Dispute {
+  id                    String        @id @default(cuid())
+  orderId               String
+  order                 Order         @relation(fields: [orderId], references: [id])
+  raisedById            String
+  raisedBy              User          @relation("RaisedDisputes", fields: [raisedById], references: [id])
+  disputeType           DisputeType
+  description           String
+  evidence              String[]      // array of photo/file URLs
+  dealerResponse        String?
+  platformRecommendation String?
+  status                DisputeStatus @default(open)
+  resolvedAt            DateTime?
+  createdAt             DateTime      @default(now())
+  updatedAt             DateTime      @updatedAt
+
+  @@index([orderId])
+  @@index([raisedById])
+  @@index([status])
+}
+
+// ─── Benchmark Prices ─────────────────────────────────────────────────────────
+
+enum BenchmarkSource {
+  seeded
+  blended
+  market
+}
+
+model BenchmarkPrice {
+  id              String          @id @default(cuid())
+  partNumber      String          // OEM number or normalised part name
+  condition       PartCondition
+  country         String          // ISO 3166-1 alpha-2
+  floor           Decimal         @db.Decimal(12, 2)
+  average         Decimal         @db.Decimal(12, 2)
+  ceiling         Decimal         @db.Decimal(12, 2)
+  currency        String          @default("GHS")
+  source          BenchmarkSource @default(market)
+  confidenceScore Float           @default(0.5)  // 0–1
+  sampleCount     Int             @default(1)
+  updatedAt       DateTime        @updatedAt
+  createdAt       DateTime        @default(now())
+
+  @@unique([partNumber, condition, country])
+  @@index([partNumber])
+  @@index([country])
+}
+
+// ─── Job Cards ────────────────────────────────────────────────────────────────
+
+enum JobCardStatus {
+  waiting_for_parts
+  in_progress
+  complete
+  cancelled
+}
+
+model JobCard {
+  id             String        @id @default(cuid())
+  garageId       String
+  garage         User          @relation("GarageJobCards", fields: [garageId], references: [id])
+  customerName   String
+  vehicleReg     String?
+  vehicleProfile Json?         // { make, model, year, vin }
+  description    String
+  mechanic       String?
+  claimReference String?
+  status         JobCardStatus @default(waiting_for_parts)
+  orders         Order[]       @relation("JobCardOrders")
+  createdAt      DateTime      @default(now())
+  updatedAt      DateTime      @updatedAt
+
+  @@index([garageId])
+  @@index([status])
 }

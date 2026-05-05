@@ -1,9 +1,8 @@
 import { kafka } from '../producer'
 import { prisma } from '../../db/prisma'
 
-const consumer = kafka.consumer({ groupId: 'velopx-audit-writer' })
-
 export async function startAuditConsumer(): Promise<void> {
+  const consumer = kafka().consumer({ groupId: 'velopx-audit-writer' })
   await consumer.connect()
   await consumer.subscribe({ topic: 'audit_events', fromBeginning: false })
 
@@ -24,7 +23,7 @@ export async function startAuditConsumer(): Promise<void> {
             sessionId: event.actor.session_id ?? undefined,
             requestId: event.request_id,
             latencyMs: event.latency_ms,
-            metadata: event as unknown as Record<string, unknown>,
+            metadata: event as unknown as import('@prisma/client').Prisma.InputJsonValue,
           },
         })
       } catch (err) {

@@ -1,38 +1,139 @@
+'use client'
+
 import Link from 'next/link'
+import { useCallback, useEffect, useState } from 'react'
+import { useAuth } from '@clerk/nextjs'
 
-const assessors = [
-  { name: 'Kofi Boateng', claims: 14, flagged: 6, savings: 'GHS 18,400', accuracy: '94%', lastActive: '2 min ago' },
-  { name: 'Akosua Mensah', claims: 11, flagged: 3, savings: 'GHS 9,800', accuracy: '91%', lastActive: '1 hr ago' },
-  { name: 'Yaw Asante', claims: 9, flagged: 2, savings: 'GHS 6,100', accuracy: '89%', lastActive: 'Yesterday' },
-  { name: 'Esi Darko', claims: 8, flagged: 1, savings: 'GHS 3,200', accuracy: '97%', lastActive: 'Yesterday' },
-  { name: 'Kweku Frimpong', claims: 6, flagged: 0, savings: 'GHS 0', accuracy: '100%', lastActive: '2 days ago' },
-]
-
-const anomalies = [
-  { part: 'Front Bumper Assembly', garage: 'Tema Motors', avgDeviation: '+78%', occurrences: 4, flag: 'CRITICAL' as const },
-  { part: 'LED Headlight Assembly', garage: 'Dansoman Auto Works', avgDeviation: '+55%', occurrences: 3, flag: 'HIGH' as const },
-  { part: 'Windscreen (OEM)', garage: 'Madina Auto Centre', avgDeviation: '+42%', occurrences: 2, flag: 'HIGH' as const },
-  { part: 'Alternator 14V 90A', garage: 'Ridge Garage', avgDeviation: '+31%', occurrences: 5, flag: 'MEDIUM' as const },
-  { part: 'Bonnet / Hood Panel', garage: 'Kumasi AutoFix', avgDeviation: '+18%', occurrences: 2, flag: 'MEDIUM' as const },
-]
+interface Claim {
+  id: string
+  invoiceAmount: string
+  benchmarkAmount: string | null
+  flag: string
+  status: string
+  createdAt: string
+  garageName: string | null
+  lineItems?: { id: string; partName: string; invoicePrice: string; benchmarkLow: string | null; deviation: number | null; currency: string }[]
+  assessor: { id: string; name: string | null; email: string }
+}
 
 const anomalyConfig = {
   CRITICAL: { cls: 'bg-red-500/15 text-red-400 border border-red-500/30' },
-  HIGH: { cls: 'bg-amber-500/15 text-amber-400 border border-amber-500/30' },
-  MEDIUM: { cls: 'bg-orange-500/15 text-orange-400 border border-orange-500/20' },
+  HIGH:     { cls: 'bg-amber-500/15 text-amber-400 border border-amber-500/30' },
+  MEDIUM:   { cls: 'bg-orange-500/15 text-orange-400 border border-orange-500/20' },
 }
 
-const monthly = [
-  { month: 'Nov', claims: 38, savings: 12 },
-  { month: 'Dec', claims: 44, savings: 18 },
-  { month: 'Jan', claims: 41, savings: 15 },
-  { month: 'Feb', claims: 52, savings: 24 },
-  { month: 'Mar', claims: 60, savings: 31 },
-  { month: 'Apr', claims: 48, savings: 28 },
-]
-const maxClaims = Math.max(...monthly.map((m) => m.claims))
+function computeAssessorsFromClaims(claims: Claim[]) {
+  const map = new Map<string, { name: string; claims: number; flagged: number; savings: number; lastActive: string }>()
+  for (const c of claims) {
+    const key  = c.assessor.email
+    const name = c.assessor.name ?? c.assessor.email
+    if (!map.has(key)) map.set(key, { name, claims: 0, flagged: 0, savings: 0, lastActive: c.createdAt })
+    const s = map.get(key)!
+    s.claims++
+    if (c.flag === 'flagged') s.flagged++
+    const diff = Number(c.invoiceAmount) - Number(c.benchmarkAmount ?? c.invoiceAmount)
+    if (diff > 0) s.savings += diff
+    if (c.createdAt > s.lastActive) s.lastActive = c.createdAt
+  }
+  return Array.from(map.values()).sort((a, b) => b.claims - a.claims).slice(0, 5)
+}
+
+function computeTopAnomalies(claims: Claim[]) {
+  const map = new Map<string, { garage: string; deviations: number[]; occ: number }>()
+  for (const c of claims) {
+    for (const li of c.lineItems ?? []) {
+      const dev = li.deviation ?? 0
+      if (dev <= 10) continue
+      const key = li.partName.toLowerCase()
+      if (!map.has(key)) map.set(key, { garage: c.garageName ?? 'Unknown', deviations: [], occ: 0 })
+      const e = map.get(key)!
+      e.deviations.push(dev)
+      e.occ++
+    }
+  }
+  return Array.from(map.entries())
+    .map(([part, e]) => {
+      const avg = e.deviations.reduce((s, d) => s + d, 0) / e.deviations.length
+      const flag: 'CRITICAL' | 'HIGH' | 'MEDIUM' = avg > 50 ? 'CRITICAL' : avg > 30 ? 'HIGH' : 'MEDIUM'
+      return { part: part.charAt(0).toUpperCase() + part.slice(1), garage: e.garage, avgDeviation: `+${avg.toFixed(1)}%`, occurrences: e.occ, flag }
+    })
+    .sort((a, b) => parseFloat(b.avgDeviation) - parseFloat(a.avgDeviation))
+    .slice(0, 5)
+}
+
+const MONTH_LABELS = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec']
+
+function computeMonthlyFromClaims(claims: Claim[]) {
+  const now = new Date()
+  const slots: { key: string; month: string }[] = []
+  for (let i = 5; i >= 0; i--) {
+    const d = new Date(now.getFullYear(), now.getMonth() - i, 1)
+    slots.push({ key: `${d.getFullYear()}-${d.getMonth()}`, month: MONTH_LABELS[d.getMonth()] })
+  }
+  const map = new Map<string, { claims: number; savings: number }>()
+  for (const s of slots) map.set(s.key, { claims: 0, savings: 0 })
+  for (const c of claims) {
+    const d = new Date(c.createdAt)
+    const key = `${d.getFullYear()}-${d.getMonth()}`
+    const slot = map.get(key)
+    if (!slot) continue
+    slot.claims++
+    const diff = Number(c.invoiceAmount) - Number(c.benchmarkAmount ?? c.invoiceAmount)
+    if (diff > 0) slot.savings += diff
+  }
+  return slots.map(({ key, month }) => ({ month, ...map.get(key)! }))
+}
+
+function computeOutcomesFromClaims(claims: Claim[]) {
+  const total = claims.length
+  if (total === 0) return null
+  const ok      = claims.filter((c) => c.flag === 'ok').length
+  const review  = claims.filter((c) => c.flag === 'review').length
+  const flagged = claims.filter((c) => c.flag === 'flagged').length
+  return [
+    { label: 'Approved as-submitted',    pct: Math.round((ok      / total) * 100), color: 'bg-green-500' },
+    { label: 'Approved with adjustment', pct: Math.round((review  / total) * 100), color: 'bg-amber-500' },
+    { label: 'Flagged — awaiting action', pct: Math.round((flagged / total) * 100), color: 'bg-red-500' },
+  ]
+}
 
 export default function InsightPage() {
+  const { getToken } = useAuth()
+  const [claims, setClaims] = useState<Claim[]>([])
+
+  const API_URL = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:3000'
+
+  const fetchClaims = useCallback(async () => {
+    try {
+      const token = await getToken()
+      const res = await fetch(`${API_URL}/v1/claims?limit=500`, {
+        headers: { Authorization: `Bearer ${token}` },
+      })
+      if (!res.ok) return
+      const json = await res.json() as { data: Claim[] }
+      setClaims(json.data)
+    } catch { /* keep */ }
+  }, [getToken, API_URL])
+
+  useEffect(() => { fetchClaims() }, [fetchClaims])
+
+  const assessors  = computeAssessorsFromClaims(claims)
+  const anomalies  = computeTopAnomalies(claims)
+  const monthly    = computeMonthlyFromClaims(claims)
+  const maxClaims  = Math.max(...monthly.map((m) => m.claims), 1)
+  const outcomes   = computeOutcomesFromClaims(claims)
+  const lastMonth  = monthly.length > 0 ? monthly[monthly.length - 1].month : '—'
+
+  const flagged       = claims.filter((c) => c.flag === 'flagged').length
+  const totalSavings  = claims.reduce((s, c) => {
+    const diff = Number(c.invoiceAmount) - Number(c.benchmarkAmount ?? c.invoiceAmount)
+    return s + Math.max(0, diff)
+  }, 0)
+  const partsCount = claims.reduce((s, c) => s + (c.lineItems?.length ?? 0), 0)
+  const savingsStr = totalSavings >= 1000
+    ? `GHS ${(totalSavings / 1000).toFixed(1)}k`
+    : `GHS ${Math.round(totalSavings).toLocaleString()}`
+
   return (
     <div className="p-8">
       {/* Header */}
@@ -51,10 +152,10 @@ export default function InsightPage() {
       {/* KPI strip */}
       <div className="grid grid-cols-4 gap-4 mb-8">
         {[
-          { label: 'Claims Processed', val: '48', sub: 'This month', color: 'text-white' },
-          { label: 'Parts Validated', val: '184', sub: 'Across all claims', color: 'text-white' },
-          { label: 'Flags Raised', val: '32', sub: '17.4% of parts', color: 'text-red-400' },
-          { label: 'Savings Identified', val: 'GHS 37.5k', sub: 'vs submitted invoices', color: 'text-green-400' },
+          { label: 'Claims Processed',   val: claims.length > 0 ? claims.length.toString() : '—', sub: 'All time', color: 'text-white' },
+          { label: 'Parts Validated',    val: partsCount > 0 ? partsCount.toString() : '—', sub: 'Across all claims', color: 'text-white' },
+          { label: 'Flags Raised',       val: claims.length > 0 ? flagged.toString() : '—', sub: claims.length > 0 ? `${((flagged / claims.length) * 100).toFixed(1)}% of claims` : '', color: 'text-red-400' },
+          { label: 'Savings Identified', val: claims.length > 0 ? savingsStr : '—', sub: 'vs submitted invoices', color: 'text-green-400' },
         ].map((k) => (
           <div key={k.label} className="rounded-xl border border-[#1E2E48] bg-[#0D1E35] p-5">
             <p className="text-[#8A97AA] text-xs uppercase tracking-widest mb-2">{k.label}</p>
@@ -71,7 +172,7 @@ export default function InsightPage() {
           <div className="flex items-end gap-3 h-36">
             {monthly.map((m) => {
               const h = Math.round((m.claims / maxClaims) * 100)
-              const isCurrent = m.month === 'Apr'
+              const isCurrent = m.month === lastMonth
               return (
                 <div key={m.month} className="flex-1 flex flex-col items-center gap-2">
                   <span className="text-[#8A97AA] text-[10px]">{m.claims}</span>
@@ -88,13 +189,13 @@ export default function InsightPage() {
 
         {/* Savings vs Flags breakdown */}
         <div className="rounded-xl border border-[#1E2E48] bg-[#0D1E35] p-6">
-          <h2 className="text-white font-semibold text-sm mb-6">Claim Outcomes — April</h2>
+          <h2 className="text-white font-semibold text-sm mb-6">Claim Outcomes — {lastMonth}</h2>
           <div className="flex flex-col gap-5">
-            {[
-              { label: 'Approved as-submitted', pct: 52, color: 'bg-green-500' },
-              { label: 'Approved with adjustment', pct: 31, color: 'bg-amber-500' },
-              { label: 'Flagged — awaiting action', pct: 17, color: 'bg-red-500' },
-            ].map((row) => (
+            {(outcomes ?? [
+              { label: 'Approved as-submitted',    pct: 0, color: 'bg-green-500' },
+              { label: 'Approved with adjustment', pct: 0, color: 'bg-amber-500' },
+              { label: 'Flagged — awaiting action', pct: 0, color: 'bg-red-500' },
+            ]).map((row) => (
               <div key={row.label}>
                 <div className="flex items-center justify-between mb-1.5">
                   <span className="text-[#8A97AA] text-xs">{row.label}</span>

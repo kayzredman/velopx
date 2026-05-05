@@ -14,10 +14,13 @@ export default function GarageAppLayout() {
         tabBarInactiveTintColor: Colors.textSecondary,
       }}
     >
-      <Tabs.Screen name="index" options={{ title: 'Dashboard' }} />
-      <Tabs.Screen name="search" options={{ title: 'Search' }} />
-      <Tabs.Screen name="quotes" options={{ title: 'Quotes' }} />
-      <Tabs.Screen name="orders" options={{ title: 'Orders' }} />
+      <Tabs.Screen name="index"    options={{ title: 'Dashboard' }} />
+      <Tabs.Screen name="search"   options={{ title: 'Search' }} />
+      <Tabs.Screen name="quotes"   options={{ title: 'Quotes' }} />
+      <Tabs.Screen name="orders"   options={{ title: 'Orders' }} />
+      <Tabs.Screen name="inbound"  options={{ title: 'Inbound' }} />
+      <Tabs.Screen name="job-cards" options={{ title: 'Jobs' }} />
+      <Tabs.Screen name="profile"  options={{ title: 'Profile' }} />
     </Tabs>
   )
 }

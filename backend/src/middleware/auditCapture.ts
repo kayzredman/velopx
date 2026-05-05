@@ -1,6 +1,6 @@
 import type { Request, Response, NextFunction } from 'express'
 import { getAuth } from '@clerk/express'
-import { kafkaProducer } from '../kafka/producer'
+import { publishEvent } from '../kafka/producer'
 
 // Fires on res.finish — completely non-blocking, never delays the response.
 // Publishes a structured audit event to Kafka for every handled request.
@@ -40,15 +40,10 @@ export function auditCapture(req: Request, res: Response, next: NextFunction): v
       latency_ms: Date.now() - start,
     }
 
-    kafkaProducer
-      .send({
-        topic: 'audit_events',
-        messages: [{ key: event.actor.user_id, value: JSON.stringify(event) }],
-      })
-      .catch((err: unknown) => {
-        // Fire-and-forget — log but never surface to client
-        console.error('[auditCapture] Kafka publish failed:', err)
-      })
+    publishEvent('audit_events', event.actor.user_id ?? '', event).catch((err: unknown) => {
+      // Fire-and-forget — log but never surface to client
+      console.error('[auditCapture] Kafka publish failed:', err)
+    })
   })
 
   next()

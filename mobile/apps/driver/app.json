@@ -14,7 +14,12 @@
     },
     "ios": {
       "supportsTablet": false,
-      "bundleIdentifier": "com.velopx.driver"
+      "bundleIdentifier": "com.velopx.driver",
+      "infoPlist": {
+        "NSLocationWhenInUseUsageDescription": "VelopX Driver uses your location to update delivery tracking in real time.",
+        "NSLocationAlwaysAndWhenInUseUsageDescription": "VelopX Driver uses your location to update delivery tracking in real time.",
+        "NSCameraUsageDescription": "VelopX Driver needs camera access to capture proof of delivery photos."
+      }
     },
     "android": {
       "adaptiveIcon": {
@@ -25,7 +30,14 @@
     },
     "plugins": [
       "expo-router",
-      "expo-secure-store"
+      "expo-secure-store",
+      [
+        "expo-location",
+        {
+          "locationWhenInUsePermission": "VelopX Driver uses your location to update delivery tracking in real time.",
+          "locationAlwaysAndWhenInUsePermission": "VelopX Driver uses your location to update delivery tracking in real time."
+        }
+      ]
     ],
     "experiments": {
       "typedRoutes": true

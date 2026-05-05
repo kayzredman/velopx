@@ -14,7 +14,11 @@
     },
     "ios": {
       "supportsTablet": false,
-      "bundleIdentifier": "com.velopx.dealer"
+      "bundleIdentifier": "com.velopx.dealer",
+      "infoPlist": {
+        "NSCameraUsageDescription": "VelopX Dealer needs camera access to capture proof of delivery photos.",
+        "NSLocationWhenInUseUsageDescription": "VelopX Dealer uses your location to show delivery tracking."
+      }
     },
     "android": {
       "adaptiveIcon": {

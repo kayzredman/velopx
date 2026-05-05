@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useTransition } from 'react'
+import { useState } from 'react'
 
 interface Part {
   id: string
@@ -23,21 +23,24 @@ const STOCK_COLOURS = {
 const STOCK_LABELS = { in_stock: 'In Stock', limited: 'Limited', out_of_stock: 'Out of Stock' }
 
 export function PartRow({ part, onDeleted }: { part: Part; onDeleted: (id: string) => void }) {
-  const [isPending, startTransition] = useTransition()
+  const [isPending, setIsPending] = useState(false)
   const [error, setError] = useState('')
 
   function handleDelete() {
     if (!confirm(`Delete "${part.name}"? This cannot be undone.`)) return
 
-    startTransition(async () => {
+    setIsPending(true)
+    void (async () => {
       try {
         const res = await fetch(`/api/parts/${part.id}`, { method: 'DELETE' })
         if (!res.ok) throw new Error('Delete failed')
         onDeleted(part.id)
       } catch {
         setError('Failed to delete part.')
+      } finally {
+        setIsPending(false)
       }
-    })
+    })()
   }
 
   return (

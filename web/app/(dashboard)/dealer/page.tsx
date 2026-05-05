@@ -1,58 +1,98 @@
 import { auth } from '@clerk/nextjs/server'
 import { apiFetch } from '@/lib/api'
 
-interface Part { id: string }
-interface Order { id: string; status: string }
 interface Quote { id: string; status: string }
 
-async function getDealerStats() {
-  try {
-    const [partsRes, ordersRes, quotesRes] = await Promise.all([
-      apiFetch<{ data: Part[]; meta: { total: number } }>('/v1/parts?limit=1'),
-      apiFetch<{ data: Order[] }>('/v1/orders'),
-      apiFetch<{ data: Quote[] }>('/v1/quotes/for-dealer'),
-    ])
-    const ordersToday = ordersRes.data.filter((o) =>
-      ['pending', 'confirmed', 'dispatched'].includes(o.status)
-    ).length
-    const pendingRfqs = quotesRes.data.filter((q) => q.status === 'pending').length
-    return {
-      activeListings: partsRes.meta?.total ?? partsRes.data.length,
-      ordersToday,
-      pendingRfqs,
-    }
-  } catch {
-    return { activeListings: 12, ordersToday: 4, pendingRfqs: 3 }
+interface AnalyticsData {
+  revenueMtd: number
+  ordersMtd: number
+  ordersToday: number
+  quoteWinRate: number
+  topParts: { partId: string; name: string; oemNumber: string | null; currency: string; orderCount: number; totalRevenue: number }[]
+  monthlyRevenue: { month: string; revenue: number }[]
+}
+
+interface Delivery {
+  id: string
+  status: string
+  estimatedDelivery: string | null
+  driver: { id: string; name: string | null; email: string } | null
+  order: {
+    id: string
+    buyer: { id: string; name: string | null; email: string }
+    items: { part: { name: string; oemNumber: string | null; condition: string } }[]
   }
 }
 
-// ── Static showcase data (matches seeded DB) ───────────────────────────────
-const DISPATCHES = [
-  { id: 'ORD-001', part: 'Front Bumper Cover',     status: 'IN-TRANSIT',  statusClass: 'bg-blue-500/15 text-blue-400',   buyer: 'Tema Motors & Repairs',  eta: '14:00 Today',  driver: 'Kofi D. (FastWay)' },
-  { id: 'ORD-002', part: 'Brake Disc Rotor',        status: 'DISPATCHED',  statusClass: 'bg-amber-500/15 text-amber-400', buyer: 'Accra Garage Ltd',        eta: '16:30 Today',  driver: 'Felix A. (Shop)' },
-  { id: 'ORD-003', part: 'LED Headlight Assembly',  status: 'DELIVERED',   statusClass: 'bg-green-500/15 text-green-400', buyer: 'Fix-It Auto Centre',      eta: '09:15 Done',   driver: 'DHL Ghana' },
-]
+const ACTIVE_DISPATCH_STATUSES = ['assigned', 'collected', 'in_transit']
 
-const TOP_PARTS = [
-  { name: 'Front Bumper Cover',     oem: '53711-42200',  cond: 'OEM',      condClass: 'bg-blue-500/15 text-blue-400',   price: 'GHS 3,500', avg: 'GHS 3,200', views: 94 },
-  { name: 'LED Headlight Assembly', oem: '81150-42300',  cond: 'USED',     condClass: 'bg-amber-700/20 text-amber-400', price: 'GHS 4,200', avg: 'GHS 4,500', views: 72 },
-  { name: 'Brake Disc Rotor',       oem: '43512-0E030',  cond: 'OEM',      condClass: 'bg-blue-500/15 text-blue-400',   price: 'GHS 850',   avg: 'GHS 820',   views: 58 },
-  { name: 'Side Mirror Unit',       oem: '87940-XXXXX',  cond: 'AFTERMKT', condClass: 'bg-purple-500/15 text-purple-400', price: 'GHS 1,150', avg: 'GHS 1,300', views: 41 },
-]
+function fmtRevenue(amount: number, currency = 'GHS') {
+  if (amount >= 1000000) return `${currency} ${(amount / 1000000).toFixed(1)}M`
+  if (amount >= 1000) return `${currency} ${(amount / 1000).toFixed(1)}k`
+  return `${currency} ${Math.round(amount).toLocaleString()}`
+}
+
+function statusProps(status: string): { label: string; cls: string } {
+  switch (status) {
+    case 'in_transit': return { label: 'IN-TRANSIT', cls: 'bg-blue-500/15 text-blue-400' }
+    case 'assigned':   return { label: 'ASSIGNED',   cls: 'bg-amber-500/15 text-amber-400' }
+    case 'collected':  return { label: 'COLLECTED',  cls: 'bg-purple-500/15 text-purple-400' }
+    default:           return { label: status.toUpperCase(), cls: 'bg-[#1E2E48] text-[#8A97AA]' }
+  }
+}
+
+async function getDealerDashboardData() {
+  try {
+    const [analyticsRes, deliveriesRes, quotesRes] = await Promise.all([
+      apiFetch<{ data: AnalyticsData }>('/v1/analytics/dealer'),
+      apiFetch<{ data: Delivery[] }>('/v1/deliveries'),
+      apiFetch<{ data: Quote[] }>('/v1/quotes/for-dealer'),
+    ])
+
+    const analytics  = analyticsRes.data
+    const dispatches = deliveriesRes.data.filter((d) => ACTIVE_DISPATCH_STATUSES.includes(d.status))
+    const pendingRfqs = quotesRes.data.filter((q) => q.status === 'pending').length
+
+    // Revenue trend: compare current month to previous month
+    const monthly = analytics.monthlyRevenue
+    const revTrend = (() => {
+      if (monthly.length < 2) return null
+      const curr = monthly[monthly.length - 1].revenue
+      const prev = monthly[monthly.length - 2].revenue
+      if (prev === 0) return null
+      const pct = ((curr - prev) / prev) * 100
+      return pct
+    })()
+
+    return { analytics, dispatches, pendingRfqs, revTrend }
+  } catch {
+    return null
+  }
+}
 
 // ── Page ──────────────────────────────────────────────────────────────────────
 export default async function DealerDashboard() {
   const { sessionClaims } = await auth()
   void sessionClaims
 
-  const stats = await getDealerStats()
+  const data  = await getDealerDashboardData()
   const today = new Date().toLocaleDateString('en-GB', { weekday: 'long', day: 'numeric', month: 'short', year: 'numeric' })
 
+  const analytics   = data?.analytics
+  const dispatches  = data?.dispatches ?? []
+  const pendingRfqs = data?.pendingRfqs ?? 0
+  const revTrend    = data?.revTrend
+
+  const revenueMtdStr = analytics ? fmtRevenue(analytics.revenueMtd) : '—'
+  const revTrendStr   = revTrend != null
+    ? `${revTrend >= 0 ? '↑' : '↓'} ${Math.abs(revTrend).toFixed(1)}% vs last month`
+    : '— vs last month'
+
   const STAT_CARDS = [
-    { label: 'ACTIVE LISTINGS', value: stats.activeListings.toLocaleString(), trend: '+12 this week',   trendColor: 'text-green-400' },
-    { label: 'ORDERS TODAY',    value: String(stats.ordersToday),              trend: '+4 vs yesterday', trendColor: 'text-green-400' },
-    { label: 'PENDING RFQS',    value: String(stats.pendingRfqs),              trend: 'Respond within 4h', trendColor: 'text-[#F5A623]' },
-    { label: 'REVENUE MTD',     value: 'GHS 34.2k',                           trend: '↑ 18.2% vs last month', trendColor: 'text-green-400' },
+    { label: 'ORDERS TODAY',    value: analytics ? String(analytics.ordersToday)  : '—', trend: analytics ? `${analytics.ordersMtd} this month` : '', trendColor: 'text-green-400' },
+    { label: 'PENDING RFQS',    value: String(pendingRfqs),                              trend: 'Respond within 4h',   trendColor: 'text-[#F5A623]' },
+    { label: 'QUOTE WIN RATE',  value: analytics ? `${analytics.quoteWinRate}%`   : '—', trend: 'Accepted / responded', trendColor: 'text-green-400' },
+    { label: 'REVENUE MTD',     value: revenueMtdStr,                                    trend: revTrendStr,            trendColor: revTrend != null && revTrend >= 0 ? 'text-green-400' : 'text-red-400' },
   ]
 
   return (
@@ -113,18 +153,31 @@ export default async function DealerDashboard() {
               </tr>
             </thead>
             <tbody>
-              {DISPATCHES.map((d, i) => (
-                <tr key={d.id} className={`${i < DISPATCHES.length - 1 ? 'border-b border-[#1E2E48]' : ''} hover:bg-[#111E34] transition-colors`}>
-                  <td className="px-5 py-3.5 text-[#506070] font-mono text-xs">{d.id}</td>
-                  <td className="px-5 py-3.5 text-[#E8ECF1] font-semibold">{d.part}</td>
-                  <td className="px-5 py-3.5">
-                    <span className={`text-[10px] font-bold px-2 py-1 rounded uppercase tracking-wide ${d.statusClass}`}>{d.status}</span>
-                  </td>
-                  <td className="px-5 py-3.5 text-[#8A97AA]">{d.buyer}</td>
-                  <td className="px-5 py-3.5 text-[#8A97AA] text-xs">{d.eta}</td>
-                  <td className="px-5 py-3.5 text-[#8A97AA] text-xs">{d.driver}</td>
+              {dispatches.length === 0 ? (
+                <tr>
+                  <td colSpan={6} className="px-5 py-6 text-center text-[#506070] text-sm">No active dispatches</td>
                 </tr>
-              ))}
+              ) : dispatches.slice(0, 5).map((d, i) => {
+                const sp = statusProps(d.status)
+                const partName = d.order.items[0]?.part.name ?? 'Unknown'
+                const buyer  = d.order.buyer.name ?? d.order.buyer.email
+                const driver = d.driver ? (d.driver.name ?? d.driver.email) : 'Unassigned'
+                const eta    = d.estimatedDelivery
+                  ? new Date(d.estimatedDelivery).toLocaleString('en-GB', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' })
+                  : 'TBD'
+                return (
+                  <tr key={d.id} className={`${i < dispatches.length - 1 ? 'border-b border-[#1E2E48]' : ''} hover:bg-[#111E34] transition-colors`}>
+                    <td className="px-5 py-3.5 text-[#506070] font-mono text-xs">{d.order.id.slice(0, 8)}</td>
+                    <td className="px-5 py-3.5 text-[#E8ECF1] font-semibold">{partName}</td>
+                    <td className="px-5 py-3.5">
+                      <span className={`text-[10px] font-bold px-2 py-1 rounded uppercase tracking-wide ${sp.cls}`}>{sp.label}</span>
+                    </td>
+                    <td className="px-5 py-3.5 text-[#8A97AA]">{buyer}</td>
+                    <td className="px-5 py-3.5 text-[#8A97AA] text-xs">{eta}</td>
+                    <td className="px-5 py-3.5 text-[#8A97AA] text-xs">{driver}</td>
+                  </tr>
+                )
+              })}
             </tbody>
           </table>
         </div>
@@ -142,22 +195,22 @@ export default async function DealerDashboard() {
           <table className="w-full text-sm">
             <thead>
               <tr className="border-b border-[#1E2E48]">
-                {['PART NAME', 'OEM NO.', 'COND.', 'YOUR PRICE', 'MARKET AVG', 'VIEWS'].map((h) => (
+                {['PART NAME', 'OEM NO.', 'ORDERS', 'REVENUE'].map((h) => (
                   <th key={h} className="px-5 py-3 text-left text-[#2D4264] text-[9px] font-bold uppercase tracking-[0.12em]">{h}</th>
                 ))}
               </tr>
             </thead>
             <tbody>
-              {TOP_PARTS.map((p, i) => (
-                <tr key={p.name} className={`${i < TOP_PARTS.length - 1 ? 'border-b border-[#1E2E48]' : ''} hover:bg-[#111E34] transition-colors`}>
+              {(analytics?.topParts ?? []).length === 0 ? (
+                <tr>
+                  <td colSpan={4} className="px-5 py-6 text-center text-[#506070] text-sm">No sales data yet</td>
+                </tr>
+              ) : (analytics?.topParts ?? []).map((p, i, arr) => (
+                <tr key={p.partId} className={`${i < arr.length - 1 ? 'border-b border-[#1E2E48]' : ''} hover:bg-[#111E34] transition-colors`}>
                   <td className="px-5 py-3.5 text-[#E8ECF1] font-semibold">{p.name}</td>
-                  <td className="px-5 py-3.5 text-[#506070] font-mono text-xs">{p.oem}</td>
-                  <td className="px-5 py-3.5">
-                    <span className={`text-[9px] font-bold px-1.5 py-0.5 rounded uppercase tracking-wide ${p.condClass}`}>{p.cond}</span>
-                  </td>
-                  <td className="px-5 py-3.5 text-[#E8ECF1] font-semibold">{p.price}</td>
-                  <td className="px-5 py-3.5 text-[#506070]">{p.avg}</td>
-                  <td className="px-5 py-3.5 text-[#8A97AA]">{p.views}</td>
+                  <td className="px-5 py-3.5 text-[#506070] font-mono text-xs">{p.oemNumber ?? '—'}</td>
+                  <td className="px-5 py-3.5 text-[#E8ECF1] font-semibold">{p.orderCount}</td>
+                  <td className="px-5 py-3.5 text-[#8A97AA]">{fmtRevenue(p.totalRevenue, p.currency)}</td>
                 </tr>
               ))}
             </tbody>

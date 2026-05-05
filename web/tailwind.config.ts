@@ -2,9 +2,9 @@ import type { Config } from 'tailwindcss'
 
 const config: Config = {
   content: [
-    './app/**/*.{js,ts,jsx,tsx,mdx}',
-    './components/**/*.{js,ts,jsx,tsx,mdx}',
-    './lib/**/*.{js,ts,jsx,tsx,mdx}',
+    '/Users/kwekku/Desktop/Builds/SparePartsHub/velopx/web/app/**/*.{js,ts,jsx,tsx,mdx}',
+    '/Users/kwekku/Desktop/Builds/SparePartsHub/velopx/web/components/**/*.{js,ts,jsx,tsx,mdx}',
+    '/Users/kwekku/Desktop/Builds/SparePartsHub/velopx/web/lib/**/*.{js,ts,jsx,tsx,mdx}',
   ],
   theme: {
     extend: {

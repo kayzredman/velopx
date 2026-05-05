@@ -1,7 +1,7 @@
 # VelopX — Product & Architecture Document
 
 > Living document — updated as discussions evolve
-> Started: April 22, 2026 | Last updated: April 24, 2026
+> Started: April 22, 2026 | Last updated: May 2, 2026
 > **Brand confirmed: VelopX** | Domains clean: velopx.com / velopx.io / velopx.co / velopx.africa
 
 ---
@@ -9,39 +9,44 @@
 ## 0. Brand Identity
 
 ### Name
+
 **VelopX**
 
 ### The Story Behind the Name
 
-**Velo** — from Latin *velocitas* — speed, velocity, movement. Vehicles. Parts in motion. Claims resolved fast. Deliveries tracked. The entire platform exists to remove friction and accelerate a broken, relationship-dependent process.
+**Velo** — from Latin _velocitas_ — speed, velocity, movement. Vehicles. Parts in motion. Claims resolved fast. Deliveries tracked. The entire platform exists to remove friction and accelerate a broken, relationship-dependent process.
 
 **X** — exchange, precision, intelligence. The crossroads where dealers, garages, assessors, and insurers all meet. The unknown solved. The marker of a platform that is smarter, faster, and more transparent than anything that came before it.
 
 Together: **velocity meets intelligence.**
 
 ### One-Line Brand Statement
-> *VelopX — the intelligence layer that moves the auto parts industry.*
+
+> _VelopX — the intelligence layer that moves the auto parts industry._
 
 ### Brand Narrative
+
 > The auto parts industry runs on phone calls, personal relationships, and guesswork. Claims take longer than they should. Prices are a mystery. Assessors work blind. VelopX changes that — a single intelligent platform where parts are found, priced, quoted, ordered, and tracked at velocity. Built for Africa. Built for the world.
 
 ### Product Family
-| Product | What it is |
-| --------------- | -------------------------------------------- |
-| **VelopX** | The core platform |
-| **VelopX API** | Enterprise integration layer |
-| **VelopX Dealer** | Dealer storefront & catalogue app |
-| **VelopX Assess** | Insurance assessor tools |
-| **VelopX Track** | Delivery & logistics module |
+
+| Product            | What it is                         |
+| ------------------ | ---------------------------------- |
+| **VelopX**         | The core platform                  |
+| **VelopX API**     | Enterprise integration layer       |
+| **VelopX Dealer**  | Dealer storefront & catalogue app  |
+| **VelopX Assess**  | Insurance assessor tools           |
+| **VelopX Track**   | Delivery & logistics module        |
 | **VelopX Insight** | Analytics & intelligence dashboard |
 
 ### Domain Status
-| Domain | Status |
-| --------------- | --------- |
-| `velopx.com` | ✅ Clean — **register immediately** |
-| `velopx.io` | ✅ Clean |
-| `velopx.co` | ✅ Clean |
-| `velopx.africa` | ✅ Clean |
+
+| Domain          | Status                              |
+| --------------- | ----------------------------------- |
+| `velopx.com`    | ✅ Clean — **register immediately** |
+| `velopx.io`     | ✅ Clean                            |
+| `velopx.co`     | ✅ Clean                            |
+| `velopx.africa` | ✅ Clean                            |
 
 ### Trademark Status & Registration Plan
 
@@ -50,27 +55,30 @@ Together: **velocity meets intelligence.**
 Registering `VelopX` as a trademark gives you the legal right to exclusively use the name in your industry in each jurisdiction. Without it, someone can register it after you go public and force a rebrand or take the domain. This is not optional if you are building a real business.
 
 #### What to register
+
 - The **wordmark**: `VelopX` (the name as text)
 - The **logo mark**: once your logo is designed, register it separately
 - Class **35** (marketplace / business services) and Class **42** (software / technology services) — both apply to this platform
 
 #### Where to register — priority order
 
-| Jurisdiction | Office | Why | Cost (approx) | Timeframe |
-| ------------ | ------ | --- | ------------- | --------- |
-| **Ghana** | GIPC (Ghana Intellectual Property Commission) | Phase 1 launch market | ~$150–250 | 6–12 months |
-| **Kenya** | KIPI (Kenya Industrial Property Institute) | Phase 1 launch market | ~$150–250 | 6–12 months |
-| **South Africa** | CIPC (Companies & Intellectual Property Commission) | Largest insurance market | ~$150–300 | 12–18 months |
-| **Nigeria** | TRADEMARKS REGISTRY (via FIPO) | Largest population, Phase 2 | ~$200–350 | 12–24 months |
-| **African Regional (ARIPO)** | ARIPO — covers 22 member states in one filing | Broadest Pan-Africa coverage | ~$800–1,200 | 18–24 months |
-| **US / EU (EUIPO)** | USPTO / EUIPO | Protects API and enterprise deals with global clients | ~$300–600 each | 12–18 months |
+| Jurisdiction                 | Office                                              | Why                                                   | Cost (approx)  | Timeframe    |
+| ---------------------------- | --------------------------------------------------- | ----------------------------------------------------- | -------------- | ------------ |
+| **Ghana**                    | GIPC (Ghana Intellectual Property Commission)       | Phase 1 launch market                                 | ~$150–250      | 6–12 months  |
+| **Kenya**                    | KIPI (Kenya Industrial Property Institute)          | Phase 1 launch market                                 | ~$150–250      | 6–12 months  |
+| **South Africa**             | CIPC (Companies & Intellectual Property Commission) | Largest insurance market                              | ~$150–300      | 12–18 months |
+| **Nigeria**                  | TRADEMARKS REGISTRY (via FIPO)                      | Largest population, Phase 2                           | ~$200–350      | 12–24 months |
+| **African Regional (ARIPO)** | ARIPO — covers 22 member states in one filing       | Broadest Pan-Africa coverage                          | ~$800–1,200    | 18–24 months |
+| **US / EU (EUIPO)**          | USPTO / EUIPO                                       | Protects API and enterprise deals with global clients | ~$300–600 each | 12–18 months |
 
 #### Recommended approach
+
 1. **Register Ghana + Kenya now** — cheapest, fastest, covers Phase 1
 2. **File ARIPO** — single filing covers most of your expansion markets simultaneously. Best value for Pan-Africa coverage.
 3. **US/EU** — do this before raising investment or signing enterprise deals with international insurers
 
 #### Do this before going public
+
 Trademark filing date is your priority date. File before you announce the product publicly, launch a website, or sign any commercial agreements. The earlier the filing date, the stronger your position if anyone challenges the name later.
 
 > Engage a local IP attorney in Ghana or Kenya — costs $300–500 total for filing + professional fees for the first two markets. Worth every cent.
@@ -205,14 +213,45 @@ Each listing must declare its condition category clearly. Pricing benchmarks wil
 
 The delivery chain is a first-class flow — tracked end-to-end by all parties involved.
 
+#### Delivery Destination Resolution (Hybrid Location Model)
+
+VelopX uses a **two-tier hybrid location system** to ensure every delivery has a valid destination address before a driver is dispatched.
+
+**Tier 1 — Garage Profile Location (default)**
+Garage owners set their business address once in their Profile screen. This is stored as `User.lat`, `User.lng`, `User.address` and is used as the default destination for all orders.
+
+**Tier 2 — Per-Order Location Override (optional)**
+For cases where the vehicle is not at the main garage (e.g. roadside breakdown, job offsite), the garage can override the delivery destination on any specific order before the dealer creates the delivery. This is stored as `Order.deliveryLat`, `Order.deliveryLng`, `Order.deliveryAddress`.
+
+**Resolution Logic**
+When a dealer creates a delivery (`POST /v1/deliveries`), the server auto-resolves the destination:
+
+```
+destLat/Lng/Address = Order.deliveryLat/Lng/Address (if set)
+                   ?? User.lat/Lng/address (buyer's profile)
+                   ?? null
+```
+
+The resolved values are stored on `Delivery.destLat`, `Delivery.destLng`, `Delivery.destAddress` and surfaced to the driver app.
+
+**GPS Capture**
+
+- Garage mobile: Profile screen has a "Use Current GPS Location" button powered by `expo-location` (requires native rebuild)
+- Garage mobile: Orders screen shows a "Set Delivery Location" inline form per order (GPS + manual lat/lng + address text)
+- Browser fallback: address text input always available without GPS
+
 #### Full Lifecycle
 
 ```
 Dealer confirms order
         ↓
+[Optional] Garage sets per-order delivery location override
+        ↓
+Dealer creates delivery → backend resolves destLat/Lng/Address
+        ↓
 Dealer assigns dispatcher / driver (in Dealer App)
         ↓
-Dispatcher receives job in Driver App
+Dispatcher receives job in Driver App (with destAddress + coords)
         ↓
 Dispatcher marks "Collected from shop" → GPS timestamp logged
         ↓
@@ -1315,3 +1354,125 @@ Platform operators get a dedicated admin panel section for benchmark management:
 - Set transition thresholds (e.g. "graduate to blended mode at 50 transactions")
 - Export benchmark data per market for insurer reporting
 - See benchmark drift over time — detect market price movements
+
+---
+
+## 18. Implementation Status (as of April 30, 2026)
+
+> This section tracks actual build progress against the spec above. Updated as work completes.
+
+### 18.1 Infrastructure
+
+| Component             | Status              | Notes                                                                    |
+| --------------------- | ------------------- | ------------------------------------------------------------------------ |
+| PostgreSQL 16         | ✅ Running (Docker) | Full Prisma schema migrated                                              |
+| Redis 7               | ✅ Running (Docker) | In health check — not yet used by business logic                         |
+| Kafka (Confluent 7.6) | ✅ Running (Docker) | `audit_events`, `order_events`, `quote_events`, `delivery_events` topics |
+| Kafka UI              | ✅ Running          | Port 8080                                                                |
+| Backend API           | ✅ Built            | Express + TypeScript, port 3000                                          |
+| Web dashboard         | ✅ Built            | Next.js, Clerk auth                                                      |
+| Mobile — Dealer       | ✅ Live on device   | Expo SDK 54 / RN 0.81.5                                                  |
+| Mobile — Garage       | ✅ Live on device   | Expo SDK 54 / RN 0.81.5                                                  |
+| Mobile — Driver       | ✅ Live on device   | Expo SDK 54 / RN 0.81.5                                                  |
+| Status app            | ✅ Exists           | Separate Next.js app in workspace                                        |
+
+### 18.2 Backend Routes
+
+| Route                             | Status      | Gap                                                                      |
+| --------------------------------- | ----------- | ------------------------------------------------------------------------ |
+| `GET/POST/PATCH/DELETE /v1/parts` | ✅ Complete | —                                                                        |
+| `GET/POST/PATCH /v1/quotes`       | ⚠️ Partial  | No endpoint for **dealer to respond** — only requester can change status |
+| `GET/POST/PATCH /v1/orders`       | ⚠️ Partial  | `GET /v1/orders` returns buyer orders only — no seller/dealer view       |
+| `GET/POST/PATCH /v1/deliveries`   | ✅ Complete | Role-scoped list, state machine, GPS update endpoint                     |
+| `POST /v1/webhooks/clerk`         | ✅ Complete | Syncs Clerk users → DB on create/update/delete                           |
+| Audit trail                       | ✅ Complete | Every `/v1/*` request → Kafka → AuditEvent table                         |
+| Kafka business events             | ✅ Complete | ORDER*CREATED, ORDER_STATUS_CHANGED, QUOTE_ACCEPTED, DELIVERY*\*         |
+
+### 18.3 Mobile Apps
+
+#### Dealer app (com.velopx.dealer)
+
+| Screen                             | Status      | Gap                                                     |
+| ---------------------------------- | ----------- | ------------------------------------------------------- |
+| Sign-in / Sign-up                  | ✅ Complete | Sign-up does **not** set `publicMetadata.role` in Clerk |
+| Dashboard                          | ✅ Complete | —                                                       |
+| Catalogue (list + delete)          | ✅ Complete | Add/edit part is web-only by design                     |
+| Orders (list + confirm)            | ✅ Complete | Shows orders dealer placed as buyer — not seller view   |
+| Delivery tracking `/delivery/[id]` | ✅ Complete | Leaflet map via WebView, polls driver GPS               |
+
+#### Garage app (com.velopx.garage)
+
+| Screen                           | Status      | Gap                                                           |
+| -------------------------------- | ----------- | ------------------------------------------------------------- |
+| Sign-in / Sign-up                | ✅ Complete | Role not set on sign-up                                       |
+| Dashboard                        | ✅ Complete | —                                                             |
+| Parts search                     | ✅ Complete | **No "Request Quote" button** — cannot submit RFQ from mobile |
+| Quotes (list + accept/decline)   | ✅ Complete | Cannot create a quote from mobile                             |
+| Orders                           | ✅ Complete | —                                                             |
+| Inbound tracking `/inbound/[id]` | ✅ Complete | Leaflet map, confirm/dispute                                  |
+
+#### Driver app (com.velopx.driver)
+
+| Screen                           | Status       | Gap                                                               |
+| -------------------------------- | ------------ | ----------------------------------------------------------------- |
+| Sign-in / Sign-up                | ✅ Complete  | Role not set on sign-up                                           |
+| Deliveries list                  | ⚠️ Mock data | **Not wired to `/v1/deliveries`** — hardcoded 4 fake jobs         |
+| Delivery detail `/delivery/[id]` | ✅ Complete  | GPS mocked in `__DEV__`, camera lazy-loaded, status state machine |
+
+### 18.4 Web Dashboard
+
+#### Dealer portal (`/dealer/*`)
+
+| Page                            | Status      | Real API?                                                        |
+| ------------------------------- | ----------- | ---------------------------------------------------------------- |
+| Dashboard `/dealer`             | ✅ Built    | ✅ Stats from `/v1/parts`, `/v1/orders`, `/v1/quotes/for-dealer` |
+| Parts catalogue `/dealer/parts` | ✅ Built    | ✅ Full CRUD + AddPartForm                                       |
+| Orders `/dealer/orders`         | ✅ Built    | ✅ From `/v1/orders`                                             |
+| RFQs `/dealer/rfqs`             | ✅ UI shell | ❌ Hardcoded static data                                         |
+| Dispatch `/dealer/dispatch`     | ✅ UI shell | ❌ Hardcoded — no map, no detail page                            |
+| Analytics `/dealer/analytics`   | ✅ UI shell | ❌ Static charts                                                 |
+| Settings `/dealer/settings`     | ✅ UI shell | ❌ Visual only                                                   |
+
+#### Garage portal (`/garage/*`)
+
+| Page       | Status      | Real API? |
+| ---------- | ----------- | --------- |
+| Dashboard  | ✅ UI shell | ❌ Static |
+| Search     | ✅ UI shell | ❌ Static |
+| RFQs       | ✅ UI shell | ❌ Static |
+| Orders     | ✅ UI shell | ❌ Static |
+| Deliveries | ✅ UI shell | ❌ Static |
+| Job Cards  | ✅ UI shell | ❌ Static |
+
+#### Assessor portal (`/assess/*`)
+
+All pages (dashboard, claims, claims/[id], benchmarks, history, reports, search, settings) are UI shells — static data only.
+
+#### Insurer portal (`/insight/*`)
+
+All pages (dashboard, claims, assessors, anomalies, reports, settings) are UI shells — static data only.
+
+### 18.5 Shared Infrastructure
+
+| Item                     | Status                                                       |
+| ------------------------ | ------------------------------------------------------------ |
+| `@velopx/shared` package | ✅ `Colors`, `useApi`, `Button`, `Input`, `Logo`             |
+| Clerk auth (mobile)      | ✅ `@clerk/clerk-expo` — email/password + Apple/Google OAuth |
+| Clerk auth (web)         | ✅ `@clerk/nextjs`                                           |
+| RN 0.81.5 shims          | ✅ All 3 apps — getDevServer, WebSocket, FuseboxDispatcher   |
+| pnpm workspaces          | ✅ monorepo root                                             |
+
+### 18.6 Known Gaps — Priority Order
+
+| #   | Gap                                               | Severity     | Affects                                                                 |
+| --- | ------------------------------------------------- | ------------ | ----------------------------------------------------------------------- |
+| 1   | Role not set on sign-up                           | 🔴 Blocker   | All 3 mobile apps + web — `requireRole()` blocks dealer/garage features |
+| 2   | Dealer quote respond endpoint                     | 🔴 Core flow | RFQ loop broken — dealer receives quote request but can't respond       |
+| 3   | Garage RFQ creation from mobile                   | 🔴 Core flow | Search finds parts but can't request a quote                            |
+| 4   | Driver deliveries hardcoded                       | 🟡 Feature   | Driver sees fake jobs only                                              |
+| 5   | Dealer seller order view                          | 🟡 Feature   | Dealers can't see orders placed for their parts                         |
+| 6   | Web dispatch — real data + map                    | 🟡 Feature   | No live delivery tracking on web                                        |
+| 7   | Web RFQs — real data                              | 🟡 Feature   | Static UI only                                                          |
+| 8   | Web garage/assess/insight portals                 | 🟠 Demo only | All static, no API wiring                                               |
+| 9   | Dead file: `driver/app/(app)/delivery/[id] 2.tsx` | 🟠 Cleanup   | —                                                                       |
+| 10  | Redis unused                                      | 🟠 Tech debt | No caching layer despite Redis running                                  |

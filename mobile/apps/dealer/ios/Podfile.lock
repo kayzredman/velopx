@@ -1353,6 +1353,8 @@ PODS:
     - React-RCTFBReactNativeSpec
     - ReactCommon/turbomodule/core
     - ReactNativeDependencies
+  - react-native-maps (1.18.0):
+    - React-Core
   - react-native-safe-area-context (5.6.2):
     - hermes-engine
     - RCTRequired
@@ -1893,6 +1895,7 @@ DEPENDENCIES:
   - "React-logger (from `../../../../node_modules/.pnpm/react-native@0.81.5_@babel+core@7.29.0_@react-native+metro-config@0.85.2_@babel+core@7.29.0_b_7zxmiava3wpvxiuugncdhhfmpq/node_modules/react-native/ReactCommon/logger`)"
   - "React-Mapbuffer (from `../../../../node_modules/.pnpm/react-native@0.81.5_@babel+core@7.29.0_@react-native+metro-config@0.85.2_@babel+core@7.29.0_b_7zxmiava3wpvxiuugncdhhfmpq/node_modules/react-native/ReactCommon`)"
   - "React-microtasksnativemodule (from `../../../../node_modules/.pnpm/react-native@0.81.5_@babel+core@7.29.0_@react-native+metro-config@0.85.2_@babel+core@7.29.0_b_7zxmiava3wpvxiuugncdhhfmpq/node_modules/react-native/ReactCommon/react/nativemodule/microtasks`)"
+  - "react-native-maps (from `../../../../node_modules/.pnpm/react-native-maps@1.18.0_react-native@0.81.5_@babel+core@7.29.0_@react-native+metro-config@0._p5snbpsaw7kaqu7ke6g3vqjqr4/node_modules/react-native-maps`)"
   - "react-native-safe-area-context (from `../../../../node_modules/.pnpm/react-native-safe-area-context@5.6.2_react-native@0.81.5_@babel+core@7.29.0_@react-native+met_orotd3qxyhh4ug7ptobrc7p7ge/node_modules/react-native-safe-area-context`)"
   - "react-native-webview (from `../../../../node_modules/.pnpm/react-native-webview@13.16.1_react-native@0.81.5_@babel+core@7.29.0_@react-native+metro-confi_ot4eaeuz7btbjr5mnapspyydju/node_modules/react-native-webview`)"
   - "React-NativeModulesApple (from `../../../../node_modules/.pnpm/react-native@0.81.5_@babel+core@7.29.0_@react-native+metro-config@0.85.2_@babel+core@7.29.0_b_7zxmiava3wpvxiuugncdhhfmpq/node_modules/react-native/ReactCommon/react/nativemodule/core/platform/ios`)"
@@ -2027,6 +2030,8 @@ EXTERNAL SOURCES:
     :path: "../../../../node_modules/.pnpm/react-native@0.81.5_@babel+core@7.29.0_@react-native+metro-config@0.85.2_@babel+core@7.29.0_b_7zxmiava3wpvxiuugncdhhfmpq/node_modules/react-native/ReactCommon"
   React-microtasksnativemodule:
     :path: "../../../../node_modules/.pnpm/react-native@0.81.5_@babel+core@7.29.0_@react-native+metro-config@0.85.2_@babel+core@7.29.0_b_7zxmiava3wpvxiuugncdhhfmpq/node_modules/react-native/ReactCommon/react/nativemodule/microtasks"
+  react-native-maps:
+    :path: "../../../../node_modules/.pnpm/react-native-maps@1.18.0_react-native@0.81.5_@babel+core@7.29.0_@react-native+metro-config@0._p5snbpsaw7kaqu7ke6g3vqjqr4/node_modules/react-native-maps"
   react-native-safe-area-context:
     :path: "../../../../node_modules/.pnpm/react-native-safe-area-context@5.6.2_react-native@0.81.5_@babel+core@7.29.0_@react-native+met_orotd3qxyhh4ug7ptobrc7p7ge/node_modules/react-native-safe-area-context"
   react-native-webview:
@@ -2147,6 +2152,7 @@ SPEC CHECKSUMS:
   React-logger: 50fdb9a8236da90c0b1072da5c32ee03aeb5bf28
   React-Mapbuffer: 9050ee10c19f4f7fca8963d0211b2854d624973e
   React-microtasksnativemodule: f775db9e991c6f3b8ccbc02bfcde22770f96e23b
+  react-native-maps: 3b0c8378ff774053bdd8954c820e987fdd7b4d72
   react-native-safe-area-context: 37e680fc4cace3c0030ee46e8987d24f5d3bdab2
   react-native-webview: 0ed52ddb2eafc64a502871218440b8b4d37961c3
   React-NativeModulesApple: 8969913947d5b576de4ed371a939455a8daf28aa

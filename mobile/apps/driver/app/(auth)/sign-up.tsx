@@ -78,6 +78,7 @@ export default function SignUpScreen() {
         lastName,
         emailAddress: email.trim().toLowerCase(),
         password,
+        unsafeMetadata: { role: 'driver' },
       })
 
       await signUp.prepareEmailAddressVerification({ strategy: 'email_code' })

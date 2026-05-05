@@ -14,18 +14,24 @@
     },
     "ios": {
       "supportsTablet": false,
-      "bundleIdentifier": "com.velopx.garage"
+      "bundleIdentifier": "com.velopx.garage",
+      "infoPlist": {
+        "NSLocationWhenInUseUsageDescription": "VelopX Garage uses your location to set the delivery destination for parts orders.",
+        "NSLocationAlwaysUsageDescription": "VelopX Garage uses your location to set the delivery destination for parts orders."
+      }
     },
     "android": {
       "adaptiveIcon": {
         "foregroundImage": "./assets/adaptive-icon.png",
         "backgroundColor": "#070C14"
       },
-      "package": "com.velopx.garage"
+      "package": "com.velopx.garage",
+      "permissions": ["ACCESS_FINE_LOCATION", "ACCESS_COARSE_LOCATION"]
     },
     "plugins": [
       "expo-router",
-      "expo-secure-store"
+      "expo-secure-store",
+      ["expo-location", { "locationAlwaysAndWhenInUsePermission": "Allow VelopX Garage to use your location for delivery setup." }]
     ],
     "experiments": {
       "typedRoutes": true
