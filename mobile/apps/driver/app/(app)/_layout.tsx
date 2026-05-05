@@ -15,10 +15,7 @@ export default function DriverAppLayout() {
       }}
     >
       <Tabs.Screen name="index" options={{ title: 'Deliveries' }} />
-      <Tabs.Screen
-        name="delivery/[id]"
-        options={{ href: null }}
-      />
+      <Tabs.Screen name="profile" options={{ title: 'Profile' }} />
     </Tabs>
   )
 }
