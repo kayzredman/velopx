@@ -26,11 +26,11 @@ function parseRole(role: unknown): UserRole {
 }
 
 function isUniqueViolation(err: unknown, field?: string): boolean {
-  return (
-    err instanceof Prisma.PrismaClientKnownRequestError &&
-    err.code === 'P2002' &&
-    (!field || (err.meta?.target as string[] | undefined)?.includes(field))
-  )
+  if (!(err instanceof Prisma.PrismaClientKnownRequestError) || err.code !== 'P2002') {
+    return false
+  }
+  if (!field) return true
+  return (err.meta?.target as string[] | undefined)?.includes(field) ?? false
 }
 
 function clerkEmail(clerkUser: Awaited<ReturnType<typeof clerkClient.users.getUser>>): string | null {

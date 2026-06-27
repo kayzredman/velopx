@@ -39,4 +39,4 @@ export function publishEvent(topic: string, key: string, value: unknown): Promis
 }
 
 // Export for consumers (auditConsumer uses this)
-export { getKafka as kafka }
+export { getKafka, getKafka as kafka }

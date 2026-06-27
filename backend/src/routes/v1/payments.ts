@@ -67,7 +67,7 @@ router.post('/', requireClerkAuth, async (req, res, next) => {
     })
 
     // Command event — paymentConsumer does the provider call
-    await publishEvent('payment.initiate', {
+    await publishEvent('payment.initiate', payment.id, {
       paymentId:   payment.id,
       orderId,
       amount:      Number(order.totalAmount),

@@ -1,6 +1,6 @@
 import { Router } from 'express'
 import { z } from 'zod'
-import { requireClerkAuth } from '../../middleware/clerkAuth'
+import { requireClerkAuth, getRequestAuth } from '../../middleware/clerkAuth'
 import { requireRequestUser } from '../../lib/resolveUser'
 import { prisma } from '../../db/prisma'
 import { createHttpError } from '../../middleware/errorHandler'
@@ -42,6 +42,7 @@ const ListQuotesSchema = z.object({
 router.get('/', requireClerkAuth, async (req, res, next) => {
   try {
     const user = await requireRequestUser(req)
+    const { q, page, limit } = ListQuotesSchema.parse(req.query)
 
     const skip = (page - 1) * limit
     const where = {
@@ -75,6 +76,7 @@ router.get('/', requireClerkAuth, async (req, res, next) => {
 router.get('/for-dealer', requireClerkAuth, async (req, res, next) => {
   try {
     const user = await requireRequestUser(req)
+    const { q, page, limit } = ListQuotesSchema.parse(req.query)
 
     const skip = (page - 1) * limit
     const where = {
@@ -189,13 +191,8 @@ router.patch('/:id/status', requireClerkAuth, async (req, res, next) => {
     if (!quote) throw createHttpError(404, 'Quote not found')
 
     const isRequester = quote.requesterId === user.id
-    const isDealerOnQuote = quote.items.some((item) => item.part.dealerId === user.id)
 
-    if (status === 'responded') {
-      if (!isDealerOnQuote && user.role !== 'platform_admin') {
-        throw createHttpError(403, 'Only dealers on this quote can mark it as responded')
-      }
-    } else if (!isRequester && user.role !== 'platform_admin') {
+    if (!isRequester && user.role !== 'platform_admin') {
       throw createHttpError(403, 'Forbidden')
     }
     if (quote.status !== 'responded') {

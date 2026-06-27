@@ -36,6 +36,7 @@ const UpdateStatusSchema = z.object({
   driverId: z.string().cuid().optional(),  // required when → assigned
   proofUrl: z.string().min(1).optional(),   // photo URI or URL when → delivered
   note: z.string().max(500).optional(),
+  failureReason: z.string().min(1).max(500).optional(),
 })
 
 const LocationUpdateSchema = z.object({

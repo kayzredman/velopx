@@ -164,7 +164,7 @@ export default async function DocsPage() {
                         <td className="py-2 pr-3 font-mono text-primary">{e.method}</td>
                         <td className="py-2 pr-3 font-mono">{e.path}</td>
                         <td className="py-2 pr-3">
-                          <Badge variant="secondary">{e.auth}</Badge>
+                          <Badge variant="outline">{e.auth}</Badge>
                         </td>
                         <td className="py-2 pr-3 text-muted-foreground">{e.roles ?? '—'}</td>
                         <td className="py-2">{e.description}</td>

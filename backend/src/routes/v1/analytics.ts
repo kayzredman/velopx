@@ -210,7 +210,7 @@ router.get(
         prisma.jobCard.count({
           where: {
             ...( user.role !== 'platform_admin' && { garageId: user.id }),
-            status: { in: ['open', 'in_progress'] },
+            status: { in: ['waiting_for_parts', 'in_progress'] },
           },
         }),
       ])

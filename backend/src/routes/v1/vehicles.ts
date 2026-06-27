@@ -1,7 +1,7 @@
 import { Router } from 'express'
-import createHttpError from 'http-errors'
 import { z } from 'zod'
 import { requireClerkAuth } from '../../middleware/clerkAuth'
+import { createHttpError } from '../../middleware/errorHandler'
 
 const router = Router()
 

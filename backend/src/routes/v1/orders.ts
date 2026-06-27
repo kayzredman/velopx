@@ -1,5 +1,6 @@
 import { Router } from 'express'
 import { z } from 'zod'
+import type { Prisma } from '@prisma/client'
 import { requireClerkAuth } from '../../middleware/clerkAuth'
 import { requireRequestUser } from '../../lib/resolveUser'
 import { prisma } from '../../db/prisma'
@@ -28,6 +29,17 @@ const CreateOrderSchema = z.object({
     .min(1),
 })
 
+const ListOrdersSchema = z.object({
+  q: z.string().optional(),
+  page: z.coerce.number().int().positive().default(1),
+  limit: z.coerce.number().int().min(1).max(100).default(20),
+  view: z.enum(['buyer', 'seller']).optional().default('buyer'),
+  tab: z
+    .enum(['all', 'pending', 'active', 'confirmed', 'delivered', 'disputed'])
+    .optional()
+    .default('all'),
+})
+
 // ── GET /v1/orders/for-dealer — orders containing seller's parts
 router.get('/for-dealer', requireClerkAuth, async (req, res, next) => {
   try {
@@ -51,6 +63,7 @@ router.get('/for-dealer', requireClerkAuth, async (req, res, next) => {
 router.get('/', requireClerkAuth, async (req, res, next) => {
   try {
     const user = await requireRequestUser(req)
+    const { q, page, limit, view, tab } = ListOrdersSchema.parse(req.query)
 
     const isSellerView =
       view === 'seller' &&
@@ -58,13 +71,18 @@ router.get('/', requireClerkAuth, async (req, res, next) => {
 
     const skip = (page - 1) * limit
 
-    const tabWhere =
-      tab === 'pending'   ? { status: 'pending' }
-      : tab === 'active'    ? { status: { in: ['confirmed', 'dispatched'] } }
-      : tab === 'confirmed' ? { status: 'confirmed' }
-      : tab === 'delivered' ? { status: { in: ['delivered', 'completed'] } }
-      : tab === 'disputed'  ? { status: 'disputed' }
-      : {}
+    const tabWhere: Prisma.OrderWhereInput =
+      tab === 'pending'
+        ? { status: 'pending' }
+        : tab === 'active'
+          ? { status: { in: ['confirmed', 'dispatched'] } }
+          : tab === 'confirmed'
+            ? { status: 'confirmed' }
+            : tab === 'delivered'
+              ? { status: { in: ['delivered', 'completed'] } }
+              : tab === 'disputed'
+                ? { status: 'disputed' }
+                : {}
 
     const where = {
       ...(isSellerView
@@ -175,8 +193,7 @@ router.patch('/:id/delivery-location', requireClerkAuth, async (req, res, next) 
       address: z.string().max(500).optional(),
     }).parse(req.body)
 
-    const auth = getRequestAuth(req)
-    const user = await getOrCreateUser(auth.userId!)
+    const user = await requireRequestUser(req)
 
     const order = await prisma.order.findUnique({ where: { id: req.params.id } })
     if (!order) throw createHttpError(404, 'Order not found')

@@ -138,11 +138,11 @@ router.delete(
 router.get(
   '/team/staff',
   requireClerkAuth,
-  requireRole('garage_owner', 'garage_staff', 'workshop_manager', 'platform_admin'),
+  requireRole('garage_owner', 'garage_staff', 'platform_admin'),
   async (_req, res, next) => {
     try {
       const staff = await prisma.user.findMany({
-        where: { role: { in: ['garage_staff', 'workshop_manager'] } },
+        where: { role: 'garage_staff' },
         select: { id: true, name: true, email: true, role: true, createdAt: true },
         orderBy: { name: 'asc' },
       })

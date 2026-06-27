@@ -78,7 +78,7 @@ async function handlePaymentInitiate(raw: string): Promise<void> {
       },
     })
 
-    await publishEvent('payment.initiated', {
+    await publishEvent('payment.initiated', msg.paymentId, {
       paymentId:   msg.paymentId,
       orderId:     msg.orderId,
       providerRef,
@@ -97,7 +97,7 @@ async function handlePaymentInitiate(raw: string): Promise<void> {
       },
     }).catch(() => undefined) // swallow — don't let a DB error mask the original error
 
-    await publishEvent('payment.failed', {
+    await publishEvent('payment.failed', msg.paymentId, {
       paymentId: msg.paymentId,
       orderId:   msg.orderId,
       reason:    (err as Error).message,
@@ -140,13 +140,13 @@ async function handleWebhookReceived(raw: string): Promise<void> {
         data:  { status: 'confirmed' },
       })
 
-      await publishEvent('payment.completed', {
+      await publishEvent('payment.completed', payment.id, {
         paymentId: payment.id,
         orderId,
         txRef:     tx_ref,
       })
     } else {
-      await publishEvent('payment.failed', {
+      await publishEvent('payment.failed', payment.id, {
         paymentId: payment.id,
         orderId,
         txRef:     tx_ref,

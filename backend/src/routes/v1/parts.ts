@@ -229,12 +229,13 @@ router.patch(
       }
 
       const rawUpdate = CreatePartSchema.partial().parse(req.body)
+      const { attributes, ...restUpdate } = rawUpdate
       const updated = await prisma.part.update({
         where: { id: req.params.id },
         data: {
-          ...rawUpdate,
-          ...(rawUpdate.attributes !== undefined && {
-            attributes: rawUpdate.attributes as unknown as Prisma.InputJsonValue,
+          ...restUpdate,
+          ...(attributes !== undefined && {
+            attributes: attributes as Prisma.InputJsonValue,
           }),
         },
       })

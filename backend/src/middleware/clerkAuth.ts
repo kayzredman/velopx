@@ -1,6 +1,9 @@
 import type { Request, Response, NextFunction } from 'express'
+import { clerkClient } from '@clerk/express'
+import type { UserRole } from '@prisma/client'
 import { safeGetAuth } from '../lib/clerkConfig'
 import { expandRoles, hasAnyRole } from '../lib/roles'
+import { prisma } from '../db/prisma'
 
 function metadataFromAuth(auth: NonNullable<ReturnType<typeof safeGetAuth>>) {
   return auth.sessionClaims?.metadata as Record<string, unknown> | undefined

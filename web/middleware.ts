@@ -37,21 +37,6 @@ const clerkHandler = clerkMiddleware(async (auth, request) => {
   if (!isPublicRoute(request)) {
     await auth.protect()
   }
-
-  // Cross-portal access guard — prevent e.g. an assessor from browsing /dealer
-  if (userId) {
-    const meta = sessionClaims?.publicMetadata as { role?: string } | undefined
-    const role = meta?.role
-    if (role) {
-      for (const [prefix, allowed] of Object.entries(PORTAL_ROLES)) {
-        if (pathname.startsWith(prefix) && !allowed.includes(role)) {
-          const url = request.nextUrl.clone()
-          url.pathname = ROLE_HOME[role] ?? '/select-portal'
-          return NextResponse.redirect(url)
-        }
-      }
-    }
-  }
 })
 
 export default hasValidClerkKeys() ? clerkHandler : devMiddleware

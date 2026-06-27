@@ -1,5 +1,5 @@
 import type { Request, Response, NextFunction } from 'express'
-import { kafkaProducer } from '../kafka/producer'
+import { publishEvent } from '../kafka/producer'
 import { safeGetAuth } from '../lib/clerkConfig'
 
 // Fires on res.finish — completely non-blocking, never delays the response.

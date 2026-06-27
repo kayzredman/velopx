@@ -1,5 +1,5 @@
 import { prisma } from '../db/prisma'
-import { kafka } from '../kafka/producer'
+import { getKafka } from '../kafka/producer'
 import { hasValidClerkKeys } from './clerkConfig'
 import { API_ENDPOINTS, WEB_ROUTES } from './apiCatalog'
 
@@ -31,7 +31,7 @@ export async function getHealthReport(): Promise<HealthReport> {
   let kafkaStatus: 'ok' | 'error' | 'skipped' = 'skipped'
   if (process.env.KAFKA_BROKERS) {
     try {
-      const admin = kafka.admin()
+      const admin = getKafka().admin()
       await admin.connect()
       await admin.listTopics()
       await admin.disconnect()
