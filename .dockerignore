@@ -1,0 +1,22 @@
+# Dependencies
+node_modules
+**/node_modules
+.next
+**/.next
+dist
+**/dist
+.git
+.gitignore
+*.md
+.env
+.env.*
+!.env.example
+mobile
+**/.expo
+**/android
+**/ios
+coverage
+.cursor
+agent-tools
+velopx-mockups.html
+*.plan.md

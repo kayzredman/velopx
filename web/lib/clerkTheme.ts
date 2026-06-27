@@ -1,7 +1,5 @@
 /** velopX Clerk Appearance theme — navy/orange */
-import type { Appearance } from '@clerk/types'
-
-export const velopXTheme: Appearance = {
+export const velopXTheme = {
   variables: {
     colorPrimary: '#F5A623',
     colorBackground: '#0C1526',

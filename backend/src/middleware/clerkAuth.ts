@@ -1,13 +1,29 @@
-import { getAuth, requireAuth } from '@clerk/express'
 import type { Request, Response, NextFunction } from 'express'
+import { safeGetAuth } from '../lib/clerkConfig'
+import { expandRoles, hasAnyRole } from '../lib/roles'
 
-// Drop-in middleware for protected routes
-export const requireClerkAuth = requireAuth()
+function metadataFromAuth(auth: NonNullable<ReturnType<typeof safeGetAuth>>) {
+  return auth.sessionClaims?.metadata as Record<string, unknown> | undefined
+}
 
-// Role-based access control — reads role from Clerk publicMetadata (synced to JWT)
+function userRolesFromAuth(auth: NonNullable<ReturnType<typeof safeGetAuth>>): string[] {
+  const metadata = metadataFromAuth(auth)
+  return expandRoles(metadata?.role as string | undefined, metadata?.roles)
+}
+
+export function requireClerkAuth(req: Request, res: Response, next: NextFunction): void {
+  const auth = safeGetAuth(req)
+  if (!auth?.userId) {
+    res.status(401).json({ error: 'Unauthenticated' })
+    return
+  }
+  next()
+}
+
+// Role-based access control — reads role(s) from Clerk publicMetadata (synced to JWT)
 export function requireRole(...roles: string[]) {
   return (req: Request, res: Response, next: NextFunction): void => {
-    const auth = getAuth(req)
+    const auth = safeGetAuth(req)
 
     if (!auth?.userId) {
       res.status(401).json({ error: 'Unauthenticated' })
@@ -15,11 +31,8 @@ export function requireRole(...roles: string[]) {
     }
 
     if (roles.length > 0) {
-      const role = (auth.sessionClaims?.metadata as Record<string, unknown>)?.role as
-        | string
-        | undefined
-
-      if (!role || !roles.includes(role)) {
+      const userRoles = userRolesFromAuth(auth)
+      if (!hasAnyRole(userRoles, ...roles)) {
         res.status(403).json({ error: 'Insufficient permissions' })
         return
       }
@@ -31,15 +44,16 @@ export function requireRole(...roles: string[]) {
 
 // Helper — extract typed auth from request without throwing
 export function getRequestAuth(req: Request) {
-  const auth = getAuth(req)
-  const role = (auth.sessionClaims?.metadata as Record<string, unknown>)?.role as
-    | string
-    | undefined
+  const auth = safeGetAuth(req)
+  const metadata = auth ? metadataFromAuth(auth) : undefined
+  const roles = auth ? userRolesFromAuth(auth) : []
+  const role = (metadata?.role as string | undefined) ?? roles[0]
 
   return {
-    userId: auth.userId,
-    orgId: auth.orgId,
-    sessionId: auth.sessionId,
+    userId: auth?.userId,
+    orgId: auth?.orgId,
+    sessionId: auth?.sessionId,
     role,
+    roles,
   }
 }

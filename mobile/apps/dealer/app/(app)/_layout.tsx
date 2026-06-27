@@ -6,16 +6,14 @@ export default function AppLayout() {
     <Tabs
       screenOptions={{
         headerShown: false,
-        tabBarStyle: {
-          backgroundColor: Colors.navy900,
-          borderTopColor: Colors.navy700,
-        },
+        tabBarStyle: { backgroundColor: Colors.navy900, borderTopColor: Colors.navy700 },
         tabBarActiveTintColor: Colors.orange500,
         tabBarInactiveTintColor: Colors.textSecondary,
       }}
     >
       <Tabs.Screen name="index" options={{ title: 'Dashboard' }} />
       <Tabs.Screen name="catalogue" options={{ title: 'Catalogue' }} />
+      <Tabs.Screen name="rfqs" options={{ title: 'RFQs' }} />
       <Tabs.Screen name="orders" options={{ title: 'Orders' }} />
     </Tabs>
   )

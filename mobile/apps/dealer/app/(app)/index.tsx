@@ -1,8 +1,8 @@
-import { useUser } from '@clerk/clerk-expo'
+import { useAuth, useUser } from '@clerk/clerk-expo'
 import { useCallback, useEffect, useState } from 'react'
-import { View, Text, StyleSheet, ScrollView, RefreshControl, ActivityIndicator } from 'react-native'
+import { View, Text, StyleSheet, ScrollView, RefreshControl, ActivityIndicator, TouchableOpacity } from 'react-native'
 import { SafeAreaView } from 'react-native-safe-area-context'
-import { Colors, useApi } from '@velopx/shared'
+import { Colors, MetricCard, ErrorBanner, useApi, FontFamily } from '@velopx/shared'
 
 interface DashboardStats {
   activeListings: number
@@ -12,114 +12,73 @@ interface DashboardStats {
 
 export default function DealerDashboard() {
   const { user } = useUser()
+  const { signOut } = useAuth()
   const { apiFetch } = useApi()
   const [stats, setStats] = useState<DashboardStats | null>(null)
   const [refreshing, setRefreshing] = useState(false)
+  const [error, setError] = useState('')
 
   const fetchStats = useCallback(async () => {
+    setError('')
     try {
       const [partsRes, ordersRes, quotesRes] = await Promise.all([
-        apiFetch<{ data: unknown[]; meta?: { total: number } }>('/v1/parts?limit=1'),
-        apiFetch<{ data: { status: string }[] }>('/v1/orders'),
+        apiFetch<{ data: unknown[]; meta?: { total: number } }>('/v1/parts/mine?limit=1'),
+        apiFetch<{ data: { status: string }[] }>('/v1/orders/for-dealer'),
         apiFetch<{ data: { status: string }[] }>('/v1/quotes/for-dealer'),
       ])
 
-      const openOrders = ordersRes.data.filter((o) =>
-        ['pending', 'confirmed', 'dispatched'].includes(o.status),
-      ).length
-      const pendingQuotes = quotesRes.data.filter((q) => q.status === 'pending').length
-
       setStats({
-        activeListings: partsRes.meta?.total ?? partsRes.data.length,
-        openOrders,
-        pendingQuotes,
+        activeListings: partsRes.meta?.total ?? 0,
+        openOrders: ordersRes.data.filter((o) => ['pending', 'confirmed', 'dispatched'].includes(o.status)).length,
+        pendingQuotes: quotesRes.data.filter((q) => q.status === 'pending').length,
       })
-    } catch {
-      setStats({ activeListings: 0, openOrders: 0, pendingQuotes: 0 })
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to load dashboard')
     }
   }, [apiFetch])
 
-  useEffect(() => { fetchStats() }, [fetchStats])
-
-  async function onRefresh() {
-    setRefreshing(true)
-    await fetchStats()
-    setRefreshing(false)
-  }
-
-  const statCards = [
-    { label: 'Active Listings', value: stats?.activeListings },
-    { label: 'Pending Quotes', value: stats?.pendingQuotes },
-    { label: 'Open Orders', value: stats?.openOrders },
-  ]
+  useEffect(() => {
+    fetchStats()
+  }, [fetchStats])
 
   return (
     <SafeAreaView style={styles.safe}>
       <ScrollView
-        style={styles.scroll}
         contentContainerStyle={styles.content}
-        refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={Colors.orange500} />}
+        refreshControl={<RefreshControl refreshing={refreshing} onRefresh={async () => { setRefreshing(true); await fetchStats(); setRefreshing(false) }} tintColor={Colors.orange500} />}
       >
-        <Text style={styles.greeting}>Hey, {user?.firstName ?? 'there'} 👋</Text>
-        <Text style={styles.subtitle}>Here's what's happening today</Text>
-
-        <View style={styles.grid}>
-          {statCards.map((stat) => (
-            <View key={stat.label} style={styles.card}>
-              <Text style={styles.cardLabel}>{stat.label}</Text>
-              {stat.value === undefined ? (
-                <ActivityIndicator color={Colors.orange500} style={{ marginTop: 8 }} />
-              ) : (
-                <Text style={styles.cardValue}>{stat.value}</Text>
-              )}
-            </View>
-          ))}
+        <View style={styles.headerRow}>
+          <View>
+            <Text style={styles.greeting}>Hey, {user?.firstName ?? 'there'}</Text>
+            <Text style={styles.subtitle}>Dealer dashboard</Text>
+          </View>
+          <TouchableOpacity onPress={() => signOut()}>
+            <Text style={styles.signOut}>Sign out</Text>
+          </TouchableOpacity>
         </View>
+
+        {error ? <ErrorBanner message={error} /> : null}
+
+        {!stats ? (
+          <ActivityIndicator color={Colors.orange500} style={{ marginTop: 40 }} />
+        ) : (
+          <View style={styles.grid}>
+            <MetricCard label="Active Listings" value={stats.activeListings} accent />
+            <MetricCard label="Pending RFQs" value={stats.pendingQuotes} />
+            <MetricCard label="Open Orders" value={stats.openOrders} />
+          </View>
+        )}
       </ScrollView>
     </SafeAreaView>
   )
 }
 
 const styles = StyleSheet.create({
-  safe: {
-    flex: 1,
-    backgroundColor: Colors.navy950,
-  },
-  scroll: {
-    flex: 1,
-  },
-  content: {
-    padding: 20,
-    gap: 8,
-  },
-  greeting: {
-    fontSize: 24,
-    fontWeight: '700',
-    color: Colors.textPrimary,
-  },
-  subtitle: {
-    fontSize: 14,
-    color: Colors.textSecondary,
-    marginBottom: 24,
-  },
-  grid: {
-    gap: 12,
-  },
-  card: {
-    backgroundColor: Colors.navy900,
-    borderRadius: 14,
-    borderWidth: 1,
-    borderColor: Colors.navy700,
-    padding: 20,
-  },
-  cardLabel: {
-    fontSize: 13,
-    color: Colors.textSecondary,
-  },
-  cardValue: {
-    fontSize: 32,
-    fontWeight: '700',
-    color: Colors.textPrimary,
-    marginTop: 4,
-  },
+  safe: { flex: 1, backgroundColor: Colors.navy950 },
+  content: { padding: 20, gap: 16 },
+  headerRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start' },
+  greeting: { fontFamily: FontFamily.display, fontSize: 24, fontWeight: '700', color: Colors.textPrimary },
+  subtitle: { fontSize: 14, color: Colors.textSecondary, marginTop: 4 },
+  signOut: { color: Colors.textSecondary, fontSize: 13 },
+  grid: { gap: 12 },
 })

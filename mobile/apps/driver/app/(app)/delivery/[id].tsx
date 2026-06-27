@@ -1,3 +1,4 @@
+import * as ImagePicker from 'expo-image-picker'
 import { useCallback, useEffect, useState } from 'react'
 import {
   View,
@@ -62,9 +63,16 @@ export default function DeliveryDetailScreen() {
     fetchDelivery().finally(() => setLoading(false))
   }, [fetchDelivery])
 
+  async function pickProofPhoto() {
+    const result = await ImagePicker.launchImageLibraryAsync({ mediaTypes: ['images'], quality: 0.8 })
+    if (!result.canceled && result.assets[0]?.uri) {
+      setProofUrl(result.assets[0].uri)
+    }
+  }
+
   async function handleMarkDelivered() {
     if (!proofUrl.trim()) {
-      Alert.alert('Proof Required', 'Please enter a proof URL (photo link) before marking as delivered.')
+      Alert.alert('Proof Required', 'Capture or enter proof of delivery before marking as delivered.')
       return
     }
 
@@ -139,7 +147,10 @@ export default function DeliveryDetailScreen() {
           {delivery.status === 'in_transit' && (
             <View style={styles.section}>
               <Text style={styles.sectionLabel}>Mark as Delivered</Text>
-              <Text style={styles.fieldLabel}>Proof URL *</Text>
+              <TouchableOpacity style={styles.photoBtn} onPress={pickProofPhoto}>
+                <Text style={styles.photoBtnText}>📷 Pick Proof Photo</Text>
+              </TouchableOpacity>
+              <Text style={styles.fieldLabel}>Proof URL / URI *</Text>
               <TextInput
                 style={styles.input}
                 value={proofUrl}
@@ -206,6 +217,15 @@ const styles = StyleSheet.create({
   itemQty: { fontSize: 13, fontWeight: '600', color: Colors.orange500 },
   status: { fontSize: 15, fontWeight: '600', color: Colors.textPrimary, textTransform: 'capitalize' },
   fieldLabel: { fontSize: 12, color: Colors.textSecondary },
+  photoBtn: {
+    backgroundColor: Colors.navy800,
+    borderRadius: 10,
+    borderWidth: 1,
+    borderColor: Colors.navy700,
+    paddingVertical: 12,
+    alignItems: 'center',
+  },
+  photoBtnText: { color: Colors.orange500, fontWeight: '600' },
   input: {
     backgroundColor: Colors.navy800,
     borderRadius: 10,

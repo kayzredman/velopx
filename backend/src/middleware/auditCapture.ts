@@ -1,6 +1,6 @@
 import type { Request, Response, NextFunction } from 'express'
-import { getAuth } from '@clerk/express'
 import { kafkaProducer } from '../kafka/producer'
+import { safeGetAuth } from '../lib/clerkConfig'
 
 // Fires on res.finish — completely non-blocking, never delays the response.
 // Publishes a structured audit event to Kafka for every handled request.
@@ -16,8 +16,8 @@ export function auditCapture(req: Request, res: Response, next: NextFunction): v
     // Skip non-API paths (health checks, static assets)
     if (!req.path.startsWith('/v1')) return
 
-    const auth = getAuth(req)
-    const role = (auth.sessionClaims?.metadata as Record<string, unknown>)?.role as
+    const auth = safeGetAuth(req)
+    const role = (auth?.sessionClaims?.metadata as Record<string, unknown>)?.role as
       | string
       | undefined
 
@@ -25,10 +25,10 @@ export function auditCapture(req: Request, res: Response, next: NextFunction): v
       event_id: crypto.randomUUID(),
       timestamp: new Date().toISOString(),
       actor: {
-        user_id: auth.userId ?? null,
+        user_id: auth?.userId ?? null,
         role: role ?? null,
-        organisation_id: auth.orgId ?? null,
-        session_id: auth.sessionId ?? null,
+        organisation_id: auth?.orgId ?? null,
+        session_id: auth?.sessionId ?? null,
       },
       action: {
         method: req.method,

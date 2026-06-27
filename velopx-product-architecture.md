@@ -1130,7 +1130,7 @@ KYC status states: `PENDING → IN_REVIEW → APPROVED / REJECTED / RESUBMISSION
 
 ### 16.1 Platform Legal Position — Marketplace Enabler
 
-Spare Parts Hub operates strictly as a **technology marketplace and enabler**. The platform:
+VelopX operates strictly as a **technology marketplace and enabler**. The platform:
 
 - Does **not** manufacture, stock, or own any parts
 - Does **not** employ delivery agents or operate vehicles

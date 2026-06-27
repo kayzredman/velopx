@@ -20,6 +20,11 @@ async function proxyRequest(req: NextRequest, url: string): Promise<NextResponse
   })
 }
 
+export async function GET(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
+  const { id } = await params
+  return proxyRequest(req, `/v1/parts/${id}`)
+}
+
 export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   const { id } = await params
   return proxyRequest(req, `/v1/parts/${id}`)

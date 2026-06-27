@@ -17,14 +17,12 @@ router.post(
       return
     }
 
-    // Collect raw body for signature verification
-    let rawBody: string
-    try {
-      rawBody = await getRawBody(req)
-    } catch {
-      res.status(400).json({ error: 'Could not read request body' })
-      return
-    }
+    const rawBody =
+      req.body instanceof Buffer
+        ? req.body.toString('utf8')
+        : typeof req.body === 'string'
+          ? req.body
+          : JSON.stringify(req.body)
 
     const svixHeaders = {
       'svix-id': req.headers['svix-id'] as string,
@@ -107,17 +105,6 @@ async function handleClerkEvent(event: ClerkWebhookEvent): Promise<void> {
       // Silently ignore unhandled event types
       break
   }
-}
-
-// Read raw body from request (needed before json middleware runs on this route)
-function getRawBody(req: Router extends (...args: infer _) => unknown ? never : import('express').Request): Promise<string> {
-  return new Promise((resolve, reject) => {
-    let data = ''
-    req.setEncoding('utf8')
-    req.on('data', (chunk: string) => (data += chunk))
-    req.on('end', () => resolve(data))
-    req.on('error', reject)
-  })
 }
 
 // ── Clerk webhook event types (minimal)

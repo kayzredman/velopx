@@ -3,6 +3,8 @@ import * as SecureStore from 'expo-secure-store'
 import { Slot, useRouter, useSegments } from 'expo-router'
 import { useEffect } from 'react'
 import { StatusBar } from 'expo-status-bar'
+import { View, ActivityIndicator } from 'react-native'
+import { Colors, useVelopXFonts } from '@velopx/shared'
 
 const tokenCache = {
   getToken: (key: string) => SecureStore.getItemAsync(key),
@@ -27,11 +29,21 @@ function AuthGuard() {
 
 export default function RootLayout() {
   const publishableKey = process.env.EXPO_PUBLIC_CLERK_PUBLISHABLE_KEY
+  const { loaded } = useVelopXFonts()
+
   if (!publishableKey) throw new Error('EXPO_PUBLIC_CLERK_PUBLISHABLE_KEY is not set')
+
+  if (!loaded) {
+    return (
+      <View style={{ flex: 1, backgroundColor: Colors.navy950, justifyContent: 'center', alignItems: 'center' }}>
+        <ActivityIndicator color={Colors.orange500} />
+      </View>
+    )
+  }
 
   return (
     <ClerkProvider publishableKey={publishableKey} tokenCache={tokenCache}>
-      <StatusBar style="light" backgroundColor="#070C14" />
+      <StatusBar style="light" backgroundColor={Colors.navy950} />
       <AuthGuard />
     </ClerkProvider>
   )

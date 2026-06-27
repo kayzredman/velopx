@@ -50,7 +50,7 @@ export default function OrdersScreen() {
 
   const fetchOrders = useCallback(async () => {
     try {
-      const res = await apiFetch<{ data: Order[] }>('/v1/orders')
+      const res = await apiFetch<{ data: Order[] }>('/v1/orders/for-dealer')
       setOrders(res.data)
     } catch {
       // silently keep existing state on refresh failures

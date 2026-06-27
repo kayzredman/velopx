@@ -1,11 +1,18 @@
 import { Router } from 'express'
 import { z } from 'zod'
-import { requireClerkAuth, getRequestAuth } from '../../middleware/clerkAuth'
+import { requireClerkAuth } from '../../middleware/clerkAuth'
+import { requireRequestUser } from '../../lib/resolveUser'
 import { prisma } from '../../db/prisma'
 import { createHttpError } from '../../middleware/errorHandler'
 import { publishEvent } from '../../kafka/events'
+import { isDealerOnOrder } from '../../lib/deliveryAccess'
 
 const router = Router()
+
+const orderInclude = {
+  items: { include: { part: { select: { id: true, name: true, oemNumber: true, condition: true, dealerId: true } } } },
+  delivery: true,
+} as const
 
 const CreateOrderSchema = z.object({
   claimReference: z.string().optional(),
@@ -21,12 +28,29 @@ const CreateOrderSchema = z.object({
     .min(1),
 })
 
-// ── GET /v1/orders
+// ── GET /v1/orders/for-dealer — orders containing seller's parts
+router.get('/for-dealer', requireClerkAuth, async (req, res, next) => {
+  try {
+    const user = await requireRequestUser(req)
+
+    const orders = await prisma.order.findMany({
+      where: {
+        items: { some: { part: { dealerId: user.id } } },
+      },
+      include: orderInclude,
+      orderBy: { createdAt: 'desc' },
+    })
+
+    res.json({ data: orders })
+  } catch (err) {
+    next(err)
+  }
+})
+
+// ── GET /v1/orders — buyer's orders
 router.get('/', requireClerkAuth, async (req, res, next) => {
   try {
-    const auth = getRequestAuth(req)
-    const user = await prisma.user.findUnique({ where: { clerkId: auth.userId! } })
-    if (!user) throw createHttpError(404, 'User not found')
+    const user = await requireRequestUser(req)
 
     const orders = await prisma.order.findMany({
       where: { buyerId: user.id },
@@ -46,20 +70,18 @@ router.get('/', requireClerkAuth, async (req, res, next) => {
 // ── GET /v1/orders/:id
 router.get('/:id', requireClerkAuth, async (req, res, next) => {
   try {
-    const auth = getRequestAuth(req)
-    const user = await prisma.user.findUnique({ where: { clerkId: auth.userId! } })
-    if (!user) throw createHttpError(404, 'User not found')
+    const user = await requireRequestUser(req)
 
     const order = await prisma.order.findUnique({
       where: { id: req.params.id },
-      include: {
-        items: { include: { part: { select: { id: true, name: true, oemNumber: true, condition: true } } } },
-        delivery: true,
-      },
+      include: orderInclude,
     })
 
     if (!order) throw createHttpError(404, 'Order not found')
-    if (order.buyerId !== user.id && auth.role !== 'platform_admin') {
+
+    const isBuyer = order.buyerId === user.id
+    const isDealer = isDealerOnOrder(order, user.id)
+    if (!isBuyer && !isDealer && user.role !== 'platform_admin') {
       throw createHttpError(403, 'Forbidden')
     }
 
@@ -72,9 +94,7 @@ router.get('/:id', requireClerkAuth, async (req, res, next) => {
 // ── POST /v1/orders
 router.post('/', requireClerkAuth, async (req, res, next) => {
   try {
-    const auth = getRequestAuth(req)
-    const user = await prisma.user.findUnique({ where: { clerkId: auth.userId! } })
-    if (!user) throw createHttpError(404, 'User not found')
+    const user = await requireRequestUser(req)
 
     const data = CreateOrderSchema.parse(req.body)
     const totalAmount = data.items.reduce((sum, item) => sum + item.price * item.quantity, 0)
@@ -129,14 +149,29 @@ router.patch('/:id/status', requireClerkAuth, async (req, res, next) => {
       })
       .parse(req.body)
 
-    const auth = getRequestAuth(req)
-    const user = await prisma.user.findUnique({ where: { clerkId: auth.userId! } })
-    if (!user) throw createHttpError(404, 'User not found')
+    const user = await requireRequestUser(req)
 
-    const order = await prisma.order.findUnique({ where: { id: req.params.id } })
+    const order = await prisma.order.findUnique({
+      where: { id: req.params.id },
+      include: { items: { include: { part: { select: { dealerId: true } } } } },
+    })
     if (!order) throw createHttpError(404, 'Order not found')
-    if (order.buyerId !== user.id && auth.role !== 'platform_admin') {
+
+    const isBuyer = order.buyerId === user.id
+    const isDealer = isDealerOnOrder(order, user.id)
+
+    if (!isBuyer && !isDealer && user.role !== 'platform_admin') {
       throw createHttpError(403, 'Forbidden')
+    }
+
+    const dealerAllowed: typeof status[] = ['confirmed', 'dispatched', 'cancelled']
+    const buyerAllowed: typeof status[] = ['completed', 'cancelled', 'disputed']
+
+    if (isDealer && !isBuyer && !dealerAllowed.includes(status)) {
+      throw createHttpError(403, 'Dealers can only confirm, dispatch, or cancel orders')
+    }
+    if (isBuyer && !isDealer && !buyerAllowed.includes(status)) {
+      throw createHttpError(403, 'Buyers cannot set this order status')
     }
 
     const updated = await prisma.order.update({

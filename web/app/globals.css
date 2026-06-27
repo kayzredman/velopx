@@ -1,25 +1,43 @@
-/* Tailwind base + velopX global tokens */
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Space+Grotesk:wght@500;600;700;800&display=swap');
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
-:root {
-  --navy-950: #070c14;
-  --navy-900: #0c1526;
-  --navy-800: #111e34;
-  --navy-700: #1e2e48;
-  --navy-600: #2d4264;
-  --orange-500: #f5a623;
-  --orange-400: #f7bc5a;
-  --text-primary: #e8ecf1;
-  --text-secondary: #8a97aa;
-}
+@layer base {
+  :root {
+    --background: 214 44% 4%;
+    --foreground: 214 20% 93%;
+    --card: 214 44% 7%;
+    --card-foreground: 214 20% 93%;
+    --popover: 214 44% 7%;
+    --popover-foreground: 214 20% 93%;
+    --primary: 38 91% 55%;
+    --primary-foreground: 0 0% 0%;
+    --secondary: 214 32% 14%;
+    --secondary-foreground: 214 20% 93%;
+    --muted: 214 32% 14%;
+    --muted-foreground: 214 12% 60%;
+    --accent: 214 32% 18%;
+    --accent-foreground: 214 20% 93%;
+    --destructive: 0 84% 60%;
+    --destructive-foreground: 0 0% 98%;
+    --border: 214 32% 20%;
+    --input: 214 32% 20%;
+    --ring: 38 91% 55%;
+    --radius: 0.625rem;
+  }
 
-* {
-  box-sizing: border-box;
-}
+  * {
+    @apply border-border;
+  }
 
-html,
-body {
-  height: 100%;
+  body {
+    @apply bg-background text-foreground antialiased;
+    font-family: var(--font-inter), system-ui, sans-serif;
+  }
+
+  h1, h2, h3, h4, h5, h6 {
+    font-family: var(--font-space-grotesk), system-ui, sans-serif;
+  }
 }
