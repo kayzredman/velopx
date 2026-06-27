@@ -1,89 +1,43 @@
-/* Tailwind base + velopX global tokens */
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Space+Grotesk:wght@500;600;700;800&display=swap');
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
-/* ── Entrance animations (hero — on load) ── */
-@keyframes vx-fade-up {
-  from { opacity: 0; transform: translateY(28px); }
-  to   { opacity: 1; transform: translateY(0); }
-}
-@keyframes vx-slide-right {
-  from { opacity: 0; transform: translateX(48px); }
-  to   { opacity: 1; transform: translateX(0); }
-}
-@keyframes vx-float {
-  0%, 100% { transform: translateY(0px); }
-  50%       { transform: translateY(-10px); }
-}
-@keyframes vx-row-in {
-  from { opacity: 0; transform: translateX(-10px); }
-  to   { opacity: 1; transform: translateX(0); }
-}
+@layer base {
+  :root {
+    --background: 214 44% 4%;
+    --foreground: 214 20% 93%;
+    --card: 214 44% 7%;
+    --card-foreground: 214 20% 93%;
+    --popover: 214 44% 7%;
+    --popover-foreground: 214 20% 93%;
+    --primary: 38 91% 55%;
+    --primary-foreground: 0 0% 0%;
+    --secondary: 214 32% 14%;
+    --secondary-foreground: 214 20% 93%;
+    --muted: 214 32% 14%;
+    --muted-foreground: 214 12% 60%;
+    --accent: 214 32% 18%;
+    --accent-foreground: 214 20% 93%;
+    --destructive: 0 84% 60%;
+    --destructive-foreground: 0 0% 98%;
+    --border: 214 32% 20%;
+    --input: 214 32% 20%;
+    --ring: 38 91% 55%;
+    --radius: 0.625rem;
+  }
 
-.vx-fade-up  { opacity: 0; animation: vx-fade-up   0.7s ease forwards; }
-.vx-slide-r  { opacity: 0; animation: vx-slide-right 0.8s ease forwards; }
-.vx-float    { animation: vx-float 5s ease-in-out infinite; }
+  * {
+    @apply border-border;
+  }
 
-.vx-d1 { animation-delay: 0.10s; }
-.vx-d2 { animation-delay: 0.22s; }
-.vx-d3 { animation-delay: 0.34s; }
-.vx-d4 { animation-delay: 0.46s; }
-.vx-d5 { animation-delay: 0.58s; }
-.vx-d6 { animation-delay: 0.70s; }
+  body {
+    @apply bg-background text-foreground antialiased;
+    font-family: var(--font-inter), system-ui, sans-serif;
+  }
 
-.vx-qr1 { opacity: 0; animation: vx-row-in 0.45s ease 1.1s  forwards; }
-.vx-qr2 { opacity: 0; animation: vx-row-in 0.45s ease 1.45s forwards; }
-.vx-qr3 { opacity: 0; animation: vx-row-in 0.45s ease 1.80s forwards; }
-
-/* ── Marquee (image strip) ── */
-@keyframes vx-marquee {
-  from { transform: translateX(0); }
-  to   { transform: translateX(-50%); }
-}
-.vx-marquee {
-  animation: vx-marquee 40s linear infinite;
-  will-change: transform;
-}
-.vx-marquee-wrap:hover .vx-marquee {
-  animation-play-state: paused;
-}
-
-/* ── Scroll-reveal (IntersectionObserver adds .vx-vis) ── */
-.vx-reveal,
-.vx-reveal-l,
-.vx-reveal-r {
-  opacity: 0;
-  transition: opacity 0.65s ease, transform 0.65s ease;
-}
-.vx-reveal   { transform: translateY(26px); }
-.vx-reveal-l { transform: translateX(-36px); }
-.vx-reveal-r { transform: translateX(36px); }
-
-.vx-reveal.vx-vis,
-.vx-reveal-l.vx-vis,
-.vx-reveal-r.vx-vis {
-  opacity: 1;
-  transform: translate(0, 0);
-}
-
-:root {
-  --navy-950: #070c14;
-  --navy-900: #0c1526;
-  --navy-800: #111e34;
-  --navy-700: #1e2e48;
-  --navy-600: #2d4264;
-  --orange-500: #f5a623;
-  --orange-400: #f7bc5a;
-  --text-primary: #e8ecf1;
-  --text-secondary: #8a97aa;
-}
-
-* {
-  box-sizing: border-box;
-}
-
-html,
-body {
-  height: 100%;
+  h1, h2, h3, h4, h5, h6 {
+    font-family: var(--font-space-grotesk), system-ui, sans-serif;
+  }
 }

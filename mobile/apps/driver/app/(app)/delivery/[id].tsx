@@ -1,4 +1,5 @@
-import { useCallback, useEffect, useRef, useState } from 'react'
+import * as ImagePicker from 'expo-image-picker'
+import { useCallback, useEffect, useState } from 'react'
 import {
   View,
   Text,
@@ -96,82 +97,16 @@ export default function DeliveryDetailScreen() {
       .finally(() => setLoading(false))
   }, [id, apiFetch])
 
-  // GPS tracking + 15s ping (active when assigned or in_transit)
-  const deliveryStatus = delivery?.status
-  useEffect(() => {
-    if (deliveryStatus !== 'assigned' && deliveryStatus !== 'in_transit') return
-
-    // eslint-disable-next-line @typescript-eslint/no-var-requires
-    const Location = require('expo-location') as typeof import('expo-location')
-    let cancelled = false
-
-    void (async () => {
-      const { status } = await Location.requestForegroundPermissionsAsync()
-      if (status !== 'granted') {
-        setLocationDenied(true)
-        return
-      }
-
-      // Get initial position
-      const loc = await Location.getCurrentPositionAsync({
-        accuracy: Location.Accuracy.Balanced,
-      })
-      if (cancelled) return
-
-      const pos = { latitude: loc.coords.latitude, longitude: loc.coords.longitude }
-      setDriverPos(pos)
-      setGpsActive(true)
-
-      // Ping every 15 seconds
-      gpsInterval.current = setInterval(async () => {
-        try {
-          const current = await Location.getCurrentPositionAsync({
-            accuracy: Location.Accuracy.Balanced,
-          })
-          const driverLat = current.coords.latitude
-          const driverLng = current.coords.longitude
-          setDriverPos({ latitude: driverLat, longitude: driverLng })
-          await apiFetch(`/v1/deliveries/${id}/location`, {
-              method: 'PATCH',
-              body: JSON.stringify({ lat: driverLat, lng: driverLng }),
-          })
-        } catch {
-          // non-fatal — keep interval running
-        }
-      }, GPS_INTERVAL_MS)
-    })()
-
-    return () => {
-      cancelled = true
-      if (gpsInterval.current) {
-        clearInterval(gpsInterval.current)
-        gpsInterval.current = null
-      }
-      setGpsActive(false)
+  async function pickProofPhoto() {
+    const result = await ImagePicker.launchImageLibraryAsync({ mediaTypes: ['images'], quality: 0.8 })
+    if (!result.canceled && result.assets[0]?.uri) {
+      setProofUrl(result.assets[0].uri)
     }
-  }, [deliveryStatus, id, apiFetch])
+  }
 
-  // Fit map to show both markers once delivery loads
-  useEffect(() => {
-    if (!delivery?.destination) return
-    const timer = setTimeout(() => {
-      mapRef.current?.fitToCoordinates(
-        [
-          driverPos,
-          { latitude: delivery.destination!.lat, longitude: delivery.destination!.lng },
-        ],
-        { edgePadding: { top: 80, right: 60, bottom: 80, left: 60 }, animated: true },
-      )
-    }, 800)
-    return () => clearTimeout(timer)
-  }, [delivery?.destination, driverPos])
-
-  async function captureProof() {
-    // eslint-disable-next-line @typescript-eslint/no-var-requires
-    const ImagePicker = require('expo-image-picker') as typeof import('expo-image-picker')
-    const { status } = await ImagePicker.requestCameraPermissionsAsync()
-    if (status !== 'granted') {
-      Alert.alert('Permission needed', 'Camera access is required to capture proof of delivery.')
+  async function handleMarkDelivered() {
+    if (!proofUrl.trim()) {
+      Alert.alert('Proof Required', 'Capture or enter proof of delivery before marking as delivered.')
       return
     }
     const result = await ImagePicker.launchCameraAsync({
@@ -462,17 +397,37 @@ export default function DeliveryDetailScreen() {
         )}
       </ScrollView>
 
-      {/* ── Exception modal ── */}
-      <Modal
-        visible={exceptionVisible}
-        animationType="slide"
-        transparent
-        onRequestClose={() => setExceptionVisible(false)}
-      >
-        <View style={styles.modalOverlay}>
-          <View style={styles.modalSheet}>
-            <View style={styles.modalHeader}>
-              <Text style={styles.modalTitle}>Report Exception</Text>
+          <View style={styles.section}>
+            <Text style={styles.sectionLabel}>Current Status</Text>
+            <Text style={styles.status}>{delivery.status.replace('_', ' ')}</Text>
+          </View>
+
+          {delivery.status === 'in_transit' && (
+            <View style={styles.section}>
+              <Text style={styles.sectionLabel}>Mark as Delivered</Text>
+              <TouchableOpacity style={styles.photoBtn} onPress={pickProofPhoto}>
+                <Text style={styles.photoBtnText}>📷 Pick Proof Photo</Text>
+              </TouchableOpacity>
+              <Text style={styles.fieldLabel}>Proof URL / URI *</Text>
+              <TextInput
+                style={styles.input}
+                value={proofUrl}
+                onChangeText={setProofUrl}
+                placeholder="https://your-photo-link.com/proof.jpg"
+                placeholderTextColor={Colors.textMuted}
+                autoCapitalize="none"
+                keyboardType="url"
+              />
+              <Text style={styles.fieldLabel}>Note (optional)</Text>
+              <TextInput
+                style={[styles.input, styles.textArea]}
+                value={note}
+                onChangeText={setNote}
+                placeholder="Any notes about the delivery…"
+                placeholderTextColor={Colors.textMuted}
+                multiline
+                numberOfLines={3}
+              />
               <TouchableOpacity
                 onPress={() => setExceptionVisible(false)}
                 hitSlop={{ top: 12, right: 12, bottom: 12, left: 12 }}
@@ -665,7 +620,29 @@ const styles = StyleSheet.create({
     backgroundColor: Colors.navy900,
     borderRadius: 14,
     padding: 16,
-    marginTop: 16,
+    gap: 8,
+  },
+  sectionLabel: { fontSize: 11, fontWeight: '600', color: Colors.textSecondary, textTransform: 'uppercase', letterSpacing: 0.8 },
+  orderRef: { fontSize: 16, fontWeight: '700', color: Colors.textPrimary },
+  amount: { fontSize: 14, color: Colors.textSecondary },
+  itemRow: { flexDirection: 'row', alignItems: 'center', gap: 8 },
+  itemName: { fontSize: 14, color: Colors.textPrimary, flex: 1 },
+  itemOem: { fontSize: 11, color: Colors.textSecondary },
+  itemQty: { fontSize: 13, fontWeight: '600', color: Colors.orange500 },
+  status: { fontSize: 15, fontWeight: '600', color: Colors.textPrimary, textTransform: 'capitalize' },
+  fieldLabel: { fontSize: 12, color: Colors.textSecondary },
+  photoBtn: {
+    backgroundColor: Colors.navy800,
+    borderRadius: 10,
+    borderWidth: 1,
+    borderColor: Colors.navy700,
+    paddingVertical: 12,
+    alignItems: 'center',
+  },
+  photoBtnText: { color: Colors.orange500, fontWeight: '600' },
+  input: {
+    backgroundColor: Colors.navy800,
+    borderRadius: 10,
     borderWidth: 1,
     borderColor: Colors.navy700,
   },

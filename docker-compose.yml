@@ -12,10 +12,10 @@ services:
     volumes:
       - postgres_data:/var/lib/postgresql/data
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U velopx"]
-      interval: 10s
+      test: ["CMD-SHELL", "pg_isready -U velopx -d velopx"]
+      interval: 5s
       timeout: 5s
-      retries: 5
+      retries: 10
 
   redis:
     image: redis:7-alpine
@@ -27,10 +27,10 @@ services:
     volumes:
       - redis_data:/data
     healthcheck:
-      test: ["CMD", "redis-cli", "ping"]
-      interval: 10s
+      test: ["CMD", "redis-cli", "-a", "redis_secret", "ping"]
+      interval: 5s
       timeout: 5s
-      retries: 5
+      retries: 10
 
   zookeeper:
     image: confluentinc/cp-zookeeper:7.6.0
@@ -60,21 +60,87 @@ services:
       KAFKA_AUTO_CREATE_TOPICS_ENABLE: "true"
     healthcheck:
       test: ["CMD", "kafka-broker-api-versions", "--bootstrap-server", "localhost:9092"]
-      interval: 15s
+      interval: 10s
       timeout: 10s
-      retries: 10
+      retries: 15
+      start_period: 30s
 
   kafka-ui:
     image: provectuslabs/kafka-ui:latest
     container_name: velopx_kafka_ui
     restart: unless-stopped
     depends_on:
-      - kafka
+      kafka:
+        condition: service_healthy
     ports:
       - "8080:8080"
     environment:
       KAFKA_CLUSTERS_0_NAME: velopx-local
       KAFKA_CLUSTERS_0_BOOTSTRAPSERVERS: kafka:29092
+
+  migrate:
+    profiles: [app]
+    build:
+      context: .
+      dockerfile: backend/Dockerfile
+    container_name: velopx_migrate
+    env_file: .env
+    environment:
+      DATABASE_URL: postgresql://velopx:velopx_secret@postgres:5432/velopx
+    command: ["sh", "-c", "pnpm db:push && pnpm db:seed"]
+    depends_on:
+      postgres:
+        condition: service_healthy
+    restart: "no"
+
+  backend:
+    profiles: [app]
+    build:
+      context: .
+      dockerfile: backend/Dockerfile
+    container_name: velopx_backend
+    restart: unless-stopped
+    env_file: .env
+    environment:
+      DATABASE_URL: postgresql://velopx:velopx_secret@postgres:5432/velopx
+      REDIS_URL: redis://:redis_secret@redis:6379
+      KAFKA_BROKERS: kafka:29092
+      KAFKAJS_NO_PARTITIONER_WARNING: "1"
+      CORS_ORIGINS: http://localhost:3001,http://localhost:3101
+      WEB_PUBLIC_URL: http://localhost:3101
+    ports:
+      - "${VELOPX_API_PORT:-3100}:3000"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      kafka:
+        condition: service_healthy
+      migrate:
+        condition: service_completed_successfully
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://localhost:3000/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 25s
+
+  web:
+    profiles: [app]
+    build:
+      context: .
+      dockerfile: web/Dockerfile
+    container_name: velopx_web
+    restart: unless-stopped
+    env_file: .env
+    environment:
+      NEXT_PUBLIC_API_URL: http://backend:3000
+    ports:
+      - "${VELOPX_WEB_PORT:-3101}:3001"
+    depends_on:
+      backend:
+        condition: service_healthy
 
 volumes:
   postgres_data:

@@ -4,14 +4,8 @@ import quotesRouter from './quotes'
 import ordersRouter from './orders'
 import paymentsRouter from './payments'
 import deliveriesRouter from './deliveries'
-import claimsRouter from './claims'
-import jobCardsRouter from './job-cards'
-import usersRouter from './users'
-import webhooksRouter from './webhooks'
-import analyticsRouter from './analytics'
-import disputesRouter from './disputes'
-import benchmarkRouter from './benchmark'
-import vehiclesRouter from './vehicles'
+import auditRouter from './audit'
+import directoryRouter from './directory'
 
 const router = Router()
 
@@ -20,13 +14,7 @@ router.use('/quotes', quotesRouter)
 router.use('/orders', ordersRouter)
 router.use('/payments', paymentsRouter)
 router.use('/deliveries', deliveriesRouter)
-router.use('/claims', claimsRouter)
-router.use('/job-cards', jobCardsRouter)
-router.use('/users', usersRouter)
-router.use('/webhooks', webhooksRouter)
-router.use('/analytics', analyticsRouter)
-router.use('/disputes', disputesRouter)
-router.use('/benchmark', benchmarkRouter)
-router.use('/vehicles', vehiclesRouter)
+router.use('/audit', auditRouter)
+router.use('/directory', directoryRouter)
 
 export default router

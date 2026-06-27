@@ -1,4 +1,5 @@
 import { kafka } from '../producer'
+import { Prisma } from '@prisma/client'
 import { prisma } from '../../db/prisma'
 
 export async function startAuditConsumer(): Promise<void> {
@@ -13,9 +14,18 @@ export async function startAuditConsumer(): Promise<void> {
       try {
         const event = JSON.parse(message.value.toString()) as AuditEventMessage
 
+        let userId: string | undefined
+        if (event.actor.user_id) {
+          const user = await prisma.user.findUnique({
+            where: { clerkId: event.actor.user_id },
+            select: { id: true },
+          })
+          userId = user?.id
+        }
+
         await prisma.auditEvent.create({
           data: {
-            userId: event.actor.user_id ?? undefined,
+            userId,
             organisationId: event.actor.organisation_id ?? undefined,
             role: event.actor.role ?? undefined,
             actionType: `${event.action.method} ${event.action.path}`,
@@ -23,7 +33,7 @@ export async function startAuditConsumer(): Promise<void> {
             sessionId: event.actor.session_id ?? undefined,
             requestId: event.request_id,
             latencyMs: event.latency_ms,
-            metadata: event as unknown as import('@prisma/client').Prisma.InputJsonValue,
+            metadata: event as unknown as Prisma.InputJsonValue,
           },
         })
       } catch (err) {

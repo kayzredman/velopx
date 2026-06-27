@@ -1,9 +1,9 @@
 import type { Metadata } from 'next'
-import { ClerkProvider } from '@clerk/nextjs'
-import { Inter } from 'next/font/google'
+import { Inter, Space_Grotesk } from 'next/font/google'
 import './globals.css'
 
 const inter = Inter({ subsets: ['latin'], variable: '--font-inter' })
+const spaceGrotesk = Space_Grotesk({ subsets: ['latin'], variable: '--font-space-grotesk' })
 
 export const metadata: Metadata = {
   title: 'velopX — Auto Parts Intelligence',
@@ -12,16 +12,8 @@ export const metadata: Metadata = {
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="en" className={inter.variable}>
-      <body className="bg-[#070C14] text-[#E8ECF1] antialiased" suppressHydrationWarning>
-        <ClerkProvider
-          dynamic
-          signInFallbackRedirectUrl="/select-portal"
-          signUpFallbackRedirectUrl="/select-portal"
-        >
-          {children}
-        </ClerkProvider>
-      </body>
+    <html lang="en" className={`${inter.variable} ${spaceGrotesk.variable}`}>
+      <body>{children}</body>
     </html>
   )
 }

@@ -5,8 +5,10 @@ const nextConfig: NextConfig = {
   outputFileTracingRoot: path.join(__dirname, '../'),
   images: {
     remotePatterns: [
-      { protocol: 'https', hostname: 'img.clerk.com' },
-      { protocol: 'https', hostname: 'images.clerk.dev' },
+      { hostname: 'img.clerk.com' },
+      { hostname: 'images.clerk.dev' },
+      { hostname: 'images.unsplash.com' },
+      { hostname: 'picsum.photos' },
     ],
   },
 }

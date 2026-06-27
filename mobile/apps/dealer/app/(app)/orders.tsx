@@ -67,21 +67,9 @@ export default function OrdersScreen() {
   const [selectedDriverId, setSelectedDriverId] = useState('')
   const [assigning, setAssigning] = useState(false)
 
-  const PAGE_LIMIT = 20
-
-  const fetchOrders = useCallback(async (v: ViewMode, q: string, pg: number, append: boolean) => {
-    const params = new URLSearchParams({ limit: String(PAGE_LIMIT), page: String(pg) })
-    if (v === 'seller') params.set('view', 'seller')
-    if (q.trim()) params.set('q', q.trim())
-    const res = await apiFetch<{ data: Order[]; meta: { total: number; page: number; pages: number } }>(
-      `/v1/orders?${params}`,
-    )
-    setTotal(res.meta.total)
-    setHasMore(res.meta.page < res.meta.pages)
-    setPage(res.meta.page)
-    if (append) {
-      setOrders((prev) => [...prev, ...res.data])
-    } else {
+  const fetchOrders = useCallback(async () => {
+    try {
+      const res = await apiFetch<{ data: Order[] }>('/v1/orders/for-dealer')
       setOrders(res.data)
     }
   }, [apiFetch])

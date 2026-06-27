@@ -9,11 +9,10 @@ import {
   StyleSheet,
   KeyboardAvoidingView,
   Platform,
-  Modal,
   Alert,
 } from 'react-native'
 import { SafeAreaView } from 'react-native-safe-area-context'
-import { Colors, useApi } from '@velopx/shared'
+import { Colors, ConditionBadge, useApi, FontFamily } from '@velopx/shared'
 
 interface Part {
   id: string
@@ -88,6 +87,45 @@ export default function SearchScreen() {
       setVinLoading(false)
     }
   }, [vinInput, apiFetch])
+
+  const [selected, setSelected] = useState<Set<string>>(new Set())
+  const [submitting, setSubmitting] = useState(false)
+
+  const toggleSelect = (id: string) => {
+    setSelected((prev) => {
+      const next = new Set(prev)
+      if (next.has(id)) next.delete(id)
+      else next.add(id)
+      return next
+    })
+  }
+
+  async function requestQuote() {
+    const items = results.filter((p) => selected.has(p.id))
+    if (items.length === 0) {
+      Alert.alert('Select parts', 'Tap parts to select them before requesting a quote.')
+      return
+    }
+    setSubmitting(true)
+    try {
+      await apiFetch('/v1/quotes', {
+        method: 'POST',
+        body: JSON.stringify({
+          items: items.map((p) => ({
+            partId: p.id,
+            price: Number(p.price),
+            currency: p.currency,
+          })),
+        }),
+      })
+      Alert.alert('RFQ sent', 'Dealers will respond in your Quotes tab.')
+      setSelected(new Set())
+    } catch (err) {
+      Alert.alert('Error', err instanceof Error ? err.message : 'Failed to send RFQ')
+    } finally {
+      setSubmitting(false)
+    }
+  }
 
   const doSearch = useCallback(async () => {
     if (!query.trim() && !condition) return
@@ -220,6 +258,14 @@ export default function SearchScreen() {
               </TouchableOpacity>
             ))}
           </View>
+
+          {selected.size > 0 && (
+            <TouchableOpacity style={styles.rfqBtn} onPress={requestQuote} disabled={submitting}>
+              <Text style={styles.rfqBtnText}>
+                {submitting ? 'Sending…' : `Request Quote (${selected.size})`}
+              </Text>
+            </TouchableOpacity>
+          )}
         </View>
 
         {loading ? (
@@ -234,8 +280,14 @@ export default function SearchScreen() {
                 <Text style={styles.emptyText}>No parts found. Try a different search.</Text>
               ) : null
             }
-            renderItem={({ item }) => (
-              <View style={styles.card}>
+            renderItem={({ item }) => {
+              const isSelected = selected.has(item.id)
+              return (
+              <TouchableOpacity
+                style={[styles.card, isSelected && styles.cardSelected]}
+                onPress={() => toggleSelect(item.id)}
+                activeOpacity={0.8}
+              >
                 <View style={styles.cardTop}>
                   <View style={{ flex: 1 }}>
                     <Text style={styles.partName}>{item.name}</Text>
@@ -246,26 +298,11 @@ export default function SearchScreen() {
                     <Text style={styles.price}>
                       {item.currency} {Number(item.price).toLocaleString()}
                     </Text>
-                    <View style={[styles.badge, { backgroundColor: Colors.navy700 }]}>
-                      <Text style={styles.badgeText}>{CONDITION_LABEL[item.condition]}</Text>
-                    </View>
+                    <ConditionBadge condition={item.condition} />
                   </View>
                 </View>
-                <View style={styles.cardBottom}>
-                  <View style={[styles.stockDot, { backgroundColor: STOCK_COLOR[item.stockStatus] }]}>
-                    <Text style={styles.stockText}>
-                      {item.stockStatus === 'in_stock' ? 'In Stock' : item.stockStatus === 'limited' ? 'Limited' : 'Out of Stock'}
-                    </Text>
-                  </View>
-                  <TouchableOpacity
-                    style={styles.rfqBtn}
-                    onPress={() => { setQuoteModal(item); setQuoteNote('') }}
-                  >
-                    <Text style={styles.rfqBtnText}>Request Quote</Text>
-                  </TouchableOpacity>
-                </View>
-              </View>
-            )}
+              </TouchableOpacity>
+            )}}
           />
         )}
       </KeyboardAvoidingView>
@@ -334,7 +371,7 @@ export default function SearchScreen() {
 const styles = StyleSheet.create({
   safe: { flex: 1, backgroundColor: Colors.navy950 },
   searchBox: { padding: 20, gap: 12 },
-  title: { fontSize: 22, fontWeight: '700', color: Colors.textPrimary, marginBottom: 4 },
+  title: { fontFamily: FontFamily.display, fontSize: 22, fontWeight: '700', color: Colors.textPrimary, marginBottom: 4 },
   inputRow: { flexDirection: 'row', gap: 10 },
   input: {
     flex: 1,
@@ -366,6 +403,8 @@ const styles = StyleSheet.create({
   filterChipActive: { backgroundColor: Colors.orange500, borderColor: Colors.orange500 },
   filterChipText: { fontSize: 12, color: Colors.textSecondary },
   filterChipTextActive: { color: Colors.navy950, fontWeight: '600' },
+  rfqBtn: { backgroundColor: Colors.orange500, borderRadius: 12, paddingVertical: 12, alignItems: 'center' },
+  rfqBtnText: { color: Colors.navy950, fontWeight: '700', fontSize: 14 },
   list: { padding: 20, gap: 12 },
   card: {
     backgroundColor: Colors.navy900,
@@ -375,6 +414,7 @@ const styles = StyleSheet.create({
     padding: 16,
     gap: 10,
   },
+  cardSelected: { borderColor: Colors.orange500, backgroundColor: 'rgba(245,166,35,0.08)' },
   cardTop: { flexDirection: 'row', alignItems: 'flex-start' },
   partName: { fontSize: 15, fontWeight: '600', color: Colors.textPrimary },
   oemNumber: { fontSize: 12, color: Colors.textSecondary, marginTop: 2 },

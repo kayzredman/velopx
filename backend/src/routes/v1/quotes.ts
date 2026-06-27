@@ -1,6 +1,7 @@
 import { Router } from 'express'
 import { z } from 'zod'
-import { requireClerkAuth, getRequestAuth } from '../../middleware/clerkAuth'
+import { requireClerkAuth } from '../../middleware/clerkAuth'
+import { requireRequestUser } from '../../lib/resolveUser'
 import { prisma } from '../../db/prisma'
 import { createHttpError } from '../../middleware/errorHandler'
 import { publishEvent } from '../../kafka/events'
@@ -40,10 +41,7 @@ const ListQuotesSchema = z.object({
 // ?q=&page=&limit= — search by claimReference + pagination
 router.get('/', requireClerkAuth, async (req, res, next) => {
   try {
-    const { q, page, limit } = ListQuotesSchema.parse(req.query)
-    const auth = getRequestAuth(req)
-    const user = await prisma.user.findUnique({ where: { clerkId: auth.userId! } })
-    if (!user) throw createHttpError(404, 'User not found')
+    const user = await requireRequestUser(req)
 
     const skip = (page - 1) * limit
     const where = {
@@ -76,10 +74,7 @@ router.get('/', requireClerkAuth, async (req, res, next) => {
 // ── GET /v1/quotes/for-dealer — quotes referencing parts owned by the authenticated dealer
 router.get('/for-dealer', requireClerkAuth, async (req, res, next) => {
   try {
-    const { q, page, limit } = ListQuotesSchema.parse(req.query)
-    const auth = getRequestAuth(req)
-    const user = await prisma.user.findUnique({ where: { clerkId: auth.userId! } })
-    if (!user) throw createHttpError(404, 'User not found')
+    const user = await requireRequestUser(req)
 
     const skip = (page - 1) * limit
     const where = {
@@ -117,9 +112,7 @@ router.get('/for-dealer', requireClerkAuth, async (req, res, next) => {
 // ── GET /v1/quotes/:id
 router.get('/:id', requireClerkAuth, async (req, res, next) => {
   try {
-    const auth = getRequestAuth(req)
-    const user = await prisma.user.findUnique({ where: { clerkId: auth.userId! } })
-    if (!user) throw createHttpError(404, 'User not found')
+    const user = await requireRequestUser(req)
 
     const quote = await prisma.quote.findUnique({
       where: { id: req.params.id },
@@ -137,7 +130,7 @@ router.get('/:id', requireClerkAuth, async (req, res, next) => {
 
     // Only the requester, a dealer whose parts are on the quote, or platform_admin can view
     const isDealerOnQuote = quote.items.some((item) => item.part.dealer.id === user.id)
-    if (quote.requesterId !== user.id && !isDealerOnQuote && auth.role !== 'platform_admin') {
+    if (quote.requesterId !== user.id && !isDealerOnQuote && user.role !== 'platform_admin') {
       throw createHttpError(403, 'Forbidden')
     }
 
@@ -150,9 +143,7 @@ router.get('/:id', requireClerkAuth, async (req, res, next) => {
 // ── POST /v1/quotes — create a quote request
 router.post('/', requireClerkAuth, async (req, res, next) => {
   try {
-    const auth = getRequestAuth(req)
-    const user = await prisma.user.findUnique({ where: { clerkId: auth.userId! } })
-    if (!user) throw createHttpError(404, 'User not found')
+    const user = await requireRequestUser(req)
 
     const data = CreateQuoteSchema.parse(req.body)
 
@@ -187,16 +178,24 @@ router.patch('/:id/status', requireClerkAuth, async (req, res, next) => {
       .object({ status: z.enum(['accepted', 'declined']) })
       .parse(req.body)
 
-    const auth = getRequestAuth(req)
-    const user = await prisma.user.findUnique({ where: { clerkId: auth.userId! } })
-    if (!user) throw createHttpError(404, 'User not found')
+    const user = await requireRequestUser(req)
 
     const quote = await prisma.quote.findUnique({
       where: { id: req.params.id },
-      include: { items: true },
+      include: {
+        items: { include: { part: { select: { dealerId: true } } } },
+      },
     })
     if (!quote) throw createHttpError(404, 'Quote not found')
-    if (quote.requesterId !== user.id && auth.role !== 'platform_admin') {
+
+    const isRequester = quote.requesterId === user.id
+    const isDealerOnQuote = quote.items.some((item) => item.part.dealerId === user.id)
+
+    if (status === 'responded') {
+      if (!isDealerOnQuote && user.role !== 'platform_admin') {
+        throw createHttpError(403, 'Only dealers on this quote can mark it as responded')
+      }
+    } else if (!isRequester && user.role !== 'platform_admin') {
       throw createHttpError(403, 'Forbidden')
     }
     if (quote.status !== 'responded') {

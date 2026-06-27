@@ -2,6 +2,8 @@ import { Router } from 'express'
 import { z } from 'zod'
 import type { Prisma } from '@prisma/client'
 import { requireClerkAuth, requireRole, getRequestAuth } from '../../middleware/clerkAuth'
+import { requireRequestUser } from '../../lib/resolveUser'
+import { MARKETPLACE_VIEWER_ROLES, isMarketplaceViewer } from '../../lib/roles'
 import { prisma } from '../../db/prisma'
 import { createHttpError } from '../../middleware/errorHandler'
 
@@ -26,45 +28,64 @@ const SearchPartsSchema = z.object({
   q: z.string().optional(),
   condition: z.enum(['oem', 'aftermarket', 'used']).optional(),
   country: z.string().optional(),
-  mine: z.coerce.boolean().optional(),
+  dealerId: z.string().cuid().optional(),
   page: z.coerce.number().int().positive().default(1),
   limit: z.coerce.number().int().min(1).max(100).default(20),
 })
 
-// ── GET /v1/parts — public search (pass mine=true to filter to own listings)
-router.get('/', async (req, res, next) => {
+function buildPartsWhere(params: z.infer<typeof SearchPartsSchema>) {
+  const { q, condition, country, dealerId } = params
+  return {
+    ...(dealerId && { dealerId }),
+    ...(condition && { condition }),
+    ...(country && { country }),
+    ...(q && {
+      OR: [
+        { name: { contains: q, mode: 'insensitive' as const } },
+        { oemNumber: { contains: q, mode: 'insensitive' as const } },
+        { description: { contains: q, mode: 'insensitive' as const } },
+      ],
+    }),
+  }
+}
+
+async function searchParts(
+  params: z.infer<typeof SearchPartsSchema>,
+  options: { enrichedDealer: boolean }
+) {
+  const { page, limit } = params
+  const skip = (page - 1) * limit
+  const where = buildPartsWhere(params)
+
+  const dealerSelect = options.enrichedDealer
+    ? { id: true, name: true, email: true, role: true }
+    : { id: true, name: true }
+
+  const [parts, total] = await prisma.$transaction([
+    prisma.part.findMany({
+      where,
+      skip,
+      take: limit,
+      orderBy: { createdAt: 'desc' },
+      include: { dealer: { select: dealerSelect } },
+    }),
+    prisma.part.count({ where }),
+  ])
+
+  return {
+    data: parts,
+    meta: { total, page, limit, pages: Math.ceil(total / limit) },
+  }
+}
+
+// ── GET /v1/parts/mine — authenticated dealer's own catalogue
+router.get('/mine', requireClerkAuth, async (req, res, next) => {
   try {
-    const { q, condition, country, mine, page, limit } = SearchPartsSchema.parse(req.query)
+    const user = await requireRequestUser(req)
+
+    const { page, limit } = SearchPartsSchema.parse(req.query)
     const skip = (page - 1) * limit
-
-    // If mine=true, require auth and filter to the caller's dealerId
-    let ownerId: string | undefined
-    if (mine) {
-      const auth = getRequestAuth(req)
-      if (!auth?.userId) {
-        res.status(401).json({ error: 'Authentication required for mine=true' })
-        return
-      }
-      const user = await prisma.user.findUnique({ where: { clerkId: auth.userId }, select: { id: true } })
-      if (!user) {
-        res.status(401).json({ error: 'User not found' })
-        return
-      }
-      ownerId = user.id
-    }
-
-    const where = {
-      ...(ownerId && { dealerId: ownerId }),
-      ...(condition && { condition }),
-      ...(country && { country }),
-      ...(q && {
-        OR: [
-          { name: { contains: q, mode: 'insensitive' as const } },
-          { oemNumber: { contains: q, mode: 'insensitive' as const } },
-          { description: { contains: q, mode: 'insensitive' as const } },
-        ],
-      }),
-    }
+    const where = { dealerId: user.id }
 
     const [parts, total] = await prisma.$transaction([
       prisma.part.findMany({
@@ -72,7 +93,6 @@ router.get('/', async (req, res, next) => {
         skip,
         take: limit,
         orderBy: { createdAt: 'desc' },
-        include: { dealer: { select: { id: true, name: true } } },
       }),
       prisma.part.count({ where }),
     ])
@@ -81,6 +101,70 @@ router.get('/', async (req, res, next) => {
       data: parts,
       meta: { total, page, limit, pages: Math.ceil(total / limit) },
     })
+  } catch (err) {
+    next(err)
+  }
+})
+
+// ── GET /v1/parts/mine/:id — single owned listing (dealer scope)
+router.get('/mine/:id', requireClerkAuth, async (req, res, next) => {
+  try {
+    const user = await requireRequestUser(req)
+
+    const part = await prisma.part.findFirst({
+      where: { id: req.params.id, dealerId: user.id },
+    })
+
+    if (!part) throw createHttpError(404, 'Part not found')
+    res.json({ data: part })
+  } catch (err) {
+    next(err)
+  }
+})
+
+// ── GET /v1/parts/benchmark — assessor price benchmark (Phase 1 seeded mode)
+router.get('/benchmark', async (req, res, next) => {
+  try {
+    const { oem, condition, country } = z
+      .object({
+        oem: z.string().min(1),
+        condition: z.enum(['oem', 'aftermarket', 'used']),
+        country: z.string().length(2).default('GH'),
+      })
+      .parse(req.query)
+
+    const { getBenchmark } = await import('../../lib/benchmark')
+    const benchmark = await getBenchmark(oem, condition, country)
+    res.json({ data: benchmark })
+  } catch (err) {
+    next(err)
+  }
+})
+
+// ── GET /v1/parts/marketplace — all dealers' listings (assessor / insurer)
+router.get(
+  '/marketplace',
+  requireClerkAuth,
+  requireRole(...MARKETPLACE_VIEWER_ROLES),
+  async (req, res, next) => {
+    try {
+      const params = SearchPartsSchema.parse(req.query)
+      const result = await searchParts(params, { enrichedDealer: true })
+      res.json(result)
+    } catch (err) {
+      next(err)
+    }
+  }
+)
+
+// ── GET /v1/parts — public search (all dealers; basic dealer info)
+router.get('/', async (req, res, next) => {
+  try {
+    const params = SearchPartsSchema.parse(req.query)
+    const auth = getRequestAuth(req)
+    const enriched = isMarketplaceViewer(auth.role, auth.roles)
+    const result = await searchParts(params, { enrichedDealer: enriched })
+    res.json(result)
   } catch (err) {
     next(err)
   }
@@ -108,12 +192,9 @@ router.post(
   requireRole('dealer_owner', 'dealer_staff', 'platform_admin'),
   async (req, res, next) => {
     try {
-      const auth = getRequestAuth(req)
       const data = CreatePartSchema.parse(req.body)
 
-      // Resolve platform userId from Clerk userId
-      const user = await prisma.user.findUnique({ where: { clerkId: auth.userId! } })
-      if (!user) throw createHttpError(404, 'User not found — ensure webhook provisioned')
+      const user = await requireRequestUser(req)
 
       const part = await prisma.part.create({
         data: {
@@ -139,13 +220,11 @@ router.patch(
   async (req, res, next) => {
     try {
       const auth = getRequestAuth(req)
-
-      const user = await prisma.user.findUnique({ where: { clerkId: auth.userId! } })
-      if (!user) throw createHttpError(404, 'User not found')
+      const user = await requireRequestUser(req)
 
       const part = await prisma.part.findUnique({ where: { id: req.params.id } })
       if (!part) throw createHttpError(404, 'Part not found')
-      if (part.dealerId !== user.id && auth.role !== 'platform_admin') {
+      if (part.dealerId !== user.id && user.role !== 'platform_admin') {
         throw createHttpError(403, 'You can only update your own listings')
       }
 
@@ -175,12 +254,11 @@ router.delete(
   async (req, res, next) => {
     try {
       const auth = getRequestAuth(req)
-      const user = await prisma.user.findUnique({ where: { clerkId: auth.userId! } })
-      if (!user) throw createHttpError(404, 'User not found')
+      const user = await requireRequestUser(req)
 
       const part = await prisma.part.findUnique({ where: { id: req.params.id } })
       if (!part) throw createHttpError(404, 'Part not found')
-      if (part.dealerId !== user.id && auth.role !== 'platform_admin') {
+      if (part.dealerId !== user.id && user.role !== 'platform_admin') {
         throw createHttpError(403, 'Forbidden')
       }
 

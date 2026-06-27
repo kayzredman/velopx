@@ -57,6 +57,10 @@ mobile/**/node_modules/
 web/.next/
 web/out/
 
+# User-uploaded part images (local dev)
+web/public/uploads/parts/*
+!web/public/uploads/parts/.gitkeep
+
 # Test coverage
 coverage/
 

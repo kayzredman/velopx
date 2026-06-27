@@ -1,48 +1,39 @@
 import { clerkMiddleware, createRouteMatcher } from '@clerk/nextjs/server'
 import { NextResponse } from 'next/server'
+import type { NextRequest } from 'next/server'
+import { hasValidClerkKeys } from '@/lib/clerkConfig'
+import { getRoleHomePath } from '@/lib/utils'
 
 const isPublicRoute = createRouteMatcher([
   '/',
+  '/catalogue(.*)',
+  '/docs',
   '/sign-in(.*)',
   '/sign-up(.*)',
   '/api/webhooks(.*)',
 ])
 
-/** Maps Clerk publicMetadata.role → home pathname */
-const ROLE_HOME: Record<string, string> = {
-  dealer_owner:   '/dealer',
-  dealer_staff:   '/dealer',
-  assessor:       '/assess',
-  insurer_admin:  '/insight',
-  insurer_staff:  '/insight',
-  garage_owner:   '/garage',
-  garage_staff:   '/garage',
-  driver:         '/dealer',      // driver web portal TBD
-  platform_admin: '/dealer',
+function devMiddleware(request: NextRequest) {
+  if (!isPublicRoute(request)) {
+    return NextResponse.redirect(new URL('/sign-in', request.url))
+  }
+  return NextResponse.next()
 }
 
-/** Portal prefixes used for cross-portal access protection */
-const PORTAL_ROLES: Record<string, string[]> = {
-  '/dealer':  ['dealer_owner', 'dealer_staff', 'platform_admin', 'driver'],
-  '/assess':  ['assessor', 'platform_admin'],
-  '/insight': ['insurer_admin', 'insurer_staff', 'platform_admin'],
-  '/garage':  ['garage_owner', 'garage_staff', 'platform_admin'],
-}
-
-export default clerkMiddleware(async (auth, request) => {
-  const { userId, sessionClaims } = await auth()
-  const { pathname } = request.nextUrl
-
-  // Redirect authenticated users from landing page to their portal
-  if (userId && pathname === '/') {
-    const meta = sessionClaims?.publicMetadata as { role?: string } | undefined
-    const home = (meta?.role && ROLE_HOME[meta.role]) ?? '/select-portal'
-    const url = request.nextUrl.clone()
-    url.pathname = home
-    return NextResponse.redirect(url)
+// Clerk v6 + Next.js 15: await auth() and auth.protect() in middleware
+const clerkHandler = clerkMiddleware(async (auth, request) => {
+  if (request.nextUrl.pathname === '/') {
+    const { userId, sessionClaims } = await auth()
+    if (userId) {
+      const metadata = sessionClaims?.metadata as Record<string, unknown> | undefined
+      const role = metadata?.role as string | undefined
+      const roles = Array.isArray(metadata?.roles)
+        ? (metadata.roles as unknown[]).filter((r): r is string => typeof r === 'string')
+        : undefined
+      return NextResponse.redirect(new URL(getRoleHomePath(role, roles), request.url))
+    }
   }
 
-  // Protect all non-public routes
   if (!isPublicRoute(request)) {
     await auth.protect()
   }
@@ -63,10 +54,10 @@ export default clerkMiddleware(async (auth, request) => {
   }
 })
 
+export default hasValidClerkKeys() ? clerkHandler : devMiddleware
+
 export const config = {
   matcher: [
-    // Required for Clerk dev browser handshake (clerk_<timestamp> rewrites)
-    '/clerk_(.*)',
     '/((?!_next|[^?]*\\.(?:html?|css|js(?!on)|jpe?g|webp|png|gif|svg|ttf|woff2?|ico|csv|docx?|xlsx?|zip|webmanifest)).*)',
     '/(api|trpc)(.*)',
   ],

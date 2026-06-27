@@ -1,9 +1,11 @@
 import { Router } from 'express'
 import { z } from 'zod'
 import { requireClerkAuth, requireRole, getRequestAuth } from '../../middleware/clerkAuth'
+import { requireRequestUser } from '../../lib/resolveUser'
 import { prisma } from '../../db/prisma'
 import { createHttpError } from '../../middleware/errorHandler'
 import { publishEvent } from '../../kafka/events'
+import { canAccessDelivery } from '../../lib/deliveryAccess'
 
 const router = Router()
 
@@ -32,8 +34,7 @@ const VALID_TRANSITIONS: Record<DeliveryStatusValue, DeliveryStatusValue[]> = {
 const UpdateStatusSchema = z.object({
   status: z.enum(['assigned', 'collected', 'in_transit', 'delivered', 'confirmed', 'disputed', 'failed']),
   driverId: z.string().cuid().optional(),  // required when → assigned
-  proofUrl: z.string().url().optional(),   // required when → delivered
-  failureReason: z.string().max(200).optional(), // required when → failed
+  proofUrl: z.string().min(1).optional(),   // photo URI or URL when → delivered
   note: z.string().max(500).optional(),
 })
 
@@ -64,10 +65,7 @@ router.get(
 // ── GET /v1/deliveries — scoped list by role
 router.get('/', requireClerkAuth, async (req, res, next) => {
   try {
-    const auth = getRequestAuth(req)
-    if (!auth.userId) return next(createHttpError(401, 'Unauthorized'))
-    const user = await prisma.user.findUnique({ where: { clerkId: auth.userId } })
-    if (!user) throw createHttpError(404, 'User not found')
+    const user = await requireRequestUser(req)
 
     // Scope deliveries to what the authenticated user is allowed to see
     let where: Record<string, unknown> = {}
@@ -112,6 +110,8 @@ router.get('/', requireClerkAuth, async (req, res, next) => {
 // ── GET /v1/deliveries/:id
 router.get('/:id', requireClerkAuth, async (req, res, next) => {
   try {
+    const user = await requireRequestUser(req)
+
     const delivery = await prisma.delivery.findUnique({
       where: { id: req.params.id },
       include: {
@@ -120,7 +120,7 @@ router.get('/:id', requireClerkAuth, async (req, res, next) => {
             buyer: { select: { id: true, name: true, email: true } },
             items: {
               include: {
-                part: { select: { id: true, name: true, oemNumber: true, condition: true, price: true, currency: true } },
+                part: { select: { id: true, name: true, oemNumber: true, condition: true, price: true, currency: true, dealerId: true } },
               },
             },
           },
@@ -130,17 +130,11 @@ router.get('/:id', requireClerkAuth, async (req, res, next) => {
     })
 
     if (!delivery) throw createHttpError(404, 'Delivery not found')
-
-    const shaped = {
-      ...delivery,
-      driverLocation: delivery.driverLat != null ? { lat: delivery.driverLat, lng: delivery.driverLng } : null,
-      destination: delivery.destLat != null ? { lat: delivery.destLat, lng: delivery.destLng, address: delivery.destAddress } : null,
-      source: delivery.sourceLat != null ? { lat: delivery.sourceLat, lng: delivery.sourceLng, address: delivery.sourceAddress } : null,
-      estimatedMinutes: null,
-      distanceKm: null,
-      driver: delivery.driver,
+    if (!canAccessDelivery(delivery, user, user.role)) {
+      throw createHttpError(403, 'Forbidden')
     }
-    res.json({ data: shaped })
+
+    res.json({ data: delivery })
   } catch (err) {
     next(err)
   }
@@ -153,17 +147,22 @@ router.post(
   requireRole('dealer_owner', 'dealer_staff', 'platform_admin'),
   async (req, res, next) => {
     try {
-      const auth = getRequestAuth(req)
-      if (!auth.userId) return next(createHttpError(401, 'Unauthorized'))
       const { orderId } = z.object({ orderId: z.string().cuid() }).parse(req.body)
 
-      const user = await prisma.user.findUnique({ where: { clerkId: auth.userId } })
-      if (!user) throw createHttpError(404, 'User not found')
+      const user = await requireRequestUser(req)
 
-      const order = await prisma.order.findUnique({ where: { id: orderId } })
+      const order = await prisma.order.findUnique({
+        where: { id: orderId },
+        include: { items: { include: { part: { select: { dealerId: true } } } } },
+      })
       if (!order) throw createHttpError(404, 'Order not found')
       if (order.status !== 'confirmed') {
         throw createHttpError(400, 'Order must be in confirmed status before creating a delivery')
+      }
+
+      const ownsOrderParts = order.items.every((item) => item.part.dealerId === user.id)
+      if (!ownsOrderParts && user.role !== 'platform_admin') {
+        throw createHttpError(403, 'You can only create deliveries for orders containing your parts')
       }
 
       const existing = await prisma.delivery.findUnique({ where: { orderId } })
@@ -208,10 +207,7 @@ router.post(
 // ── PATCH /v1/deliveries/:id/status — advance the delivery state machine
 router.patch('/:id/status', requireClerkAuth, async (req, res, next) => {
   try {
-    const auth = getRequestAuth(req)
-    if (!auth.userId) return next(createHttpError(401, 'Unauthorized'))
-    const user = await prisma.user.findUnique({ where: { clerkId: auth.userId } })
-    if (!user) throw createHttpError(404, 'User not found')
+    const user = await requireRequestUser(req)
 
     const body = UpdateStatusSchema.parse(req.body)
     const delivery = await prisma.delivery.findUnique({ where: { id: req.params.id } })

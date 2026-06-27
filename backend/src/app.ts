@@ -5,9 +5,10 @@ import { clerkMiddleware } from '@clerk/express'
 import { auditCapture } from './middleware/auditCapture'
 import { errorHandler } from './middleware/errorHandler'
 import v1Router from './routes/v1'
-import { prisma } from './db/prisma'
-import { isKafkaConnected } from './kafka/producer'
-import Redis from 'ioredis'
+import webhooksRouter from './routes/v1/webhooks'
+import docsRouter from './routes/docs'
+import { hasValidClerkKeys } from './lib/clerkConfig'
+import { getHealthReport } from './lib/healthStatus'
 
 const app = express()
 
@@ -22,56 +23,37 @@ app.use(
   })
 )
 
+// ── Health & docs (before auth — used by Docker healthcheck)
+app.get('/health', async (_req, res, next) => {
+  try {
+    const report = await getHealthReport()
+    res.status(report.status === 'error' ? 503 : 200).json(report)
+  } catch (err) {
+    next(err)
+  }
+})
+
+app.use(docsRouter)
+
+// ── Clerk webhooks need raw body for Svix verification — before JSON parser
+app.use('/v1/webhooks', express.raw({ type: 'application/json' }), webhooksRouter)
+
 // ── Body parsing
 app.use(express.json({ limit: '2mb' }))
 app.use(express.urlencoded({ extended: true }))
 
-// ── Clerk JWT middleware — enriches req with auth context on every request
-app.use(clerkMiddleware())
+// ── Clerk JWT middleware — skip when placeholder keys (local/docker smoke)
+if (hasValidClerkKeys()) {
+  app.use(clerkMiddleware())
+} else {
+  console.warn('[clerk] Placeholder or missing keys — auth middleware disabled')
+}
 
 // ── Audit capture — fires on res.finish, publishes to Kafka (never blocks)
 app.use(auditCapture)
 
 // ── Routes
 app.use('/v1', v1Router)
-
-// ── Health — deep check of all services
-app.get('/health', async (_req, res) => {
-  const start = Date.now()
-
-  const check = async (fn: () => Promise<void>): Promise<{ status: 'up' | 'down'; latencyMs: number; error?: string }> => {
-    const t = Date.now()
-    try {
-      await fn()
-      return { status: 'up', latencyMs: Date.now() - t }
-    } catch (err) {
-      return { status: 'down', latencyMs: Date.now() - t, error: (err as Error).message }
-    }
-  }
-
-  const [database, cache, kafka] = await Promise.all([
-    check(async () => { await prisma.$queryRaw`SELECT 1` }),
-    check(async () => {
-      const redis = new Redis(process.env.REDIS_URL ?? 'redis://localhost:6379', { lazyConnect: true, connectTimeout: 3000 })
-      await redis.connect()
-      await redis.ping()
-      await redis.quit()
-    }),
-    check(async () => {
-      if (!isKafkaConnected()) throw new Error('Producer not connected')
-    }),
-  ])
-
-  const allUp = [database, cache, kafka].every(s => s.status === 'up')
-  const anyDown = [database, cache, kafka].some(s => s.status === 'down')
-
-  res.status(allUp ? 200 : 503).json({
-    status: allUp ? 'operational' : anyDown ? 'degraded' : 'operational',
-    totalLatencyMs: Date.now() - start,
-    timestamp: new Date().toISOString(),
-    services: { database, cache, kafka },
-  })
-})
 
 // ── Error handler (must be last)
 app.use(errorHandler)

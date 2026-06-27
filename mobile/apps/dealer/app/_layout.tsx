@@ -3,21 +3,15 @@ import * as SecureStore from 'expo-secure-store'
 import { Slot, useRouter, useSegments } from 'expo-router'
 import { useEffect } from 'react'
 import { StatusBar } from 'expo-status-bar'
+import { View, ActivityIndicator } from 'react-native'
+import { Colors, useVelopXFonts } from '@velopx/shared'
 
-// ── Clerk token cache backed by expo-secure-store
 const tokenCache = {
-  getToken(key: string) {
-    return SecureStore.getItemAsync(key)
-  },
-  saveToken(key: string, value: string) {
-    return SecureStore.setItemAsync(key, value)
-  },
-  clearToken(key: string) {
-    return SecureStore.deleteItemAsync(key)
-  },
+  getToken: (key: string) => SecureStore.getItemAsync(key),
+  saveToken: (key: string, value: string) => SecureStore.setItemAsync(key, value),
+  clearToken: (key: string) => SecureStore.deleteItemAsync(key),
 }
 
-// ── AuthGuard — keeps auth state and navigation in sync
 function AuthGuard() {
   const { isSignedIn, isLoaded } = useAuth()
   const segments = useSegments()
@@ -25,14 +19,9 @@ function AuthGuard() {
 
   useEffect(() => {
     if (!isLoaded) return
-
     const inAuthGroup = segments[0] === '(auth)'
-
-    if (!isSignedIn && !inAuthGroup) {
-      router.replace('/(auth)/sign-in')
-    } else if (isSignedIn && inAuthGroup) {
-      router.replace('/(app)')
-    }
+    if (!isSignedIn && !inAuthGroup) router.replace('/(auth)/sign-in')
+    else if (isSignedIn && inAuthGroup) router.replace('/(app)')
   }, [isSignedIn, isLoaded, segments])
 
   return <Slot />
@@ -40,14 +29,21 @@ function AuthGuard() {
 
 export default function RootLayout() {
   const publishableKey = process.env.EXPO_PUBLIC_CLERK_PUBLISHABLE_KEY
+  const { loaded } = useVelopXFonts()
 
-  if (!publishableKey) {
-    throw new Error('EXPO_PUBLIC_CLERK_PUBLISHABLE_KEY is not set')
+  if (!publishableKey) throw new Error('EXPO_PUBLIC_CLERK_PUBLISHABLE_KEY is not set')
+
+  if (!loaded) {
+    return (
+      <View style={{ flex: 1, backgroundColor: Colors.navy950, justifyContent: 'center', alignItems: 'center' }}>
+        <ActivityIndicator color={Colors.orange500} />
+      </View>
+    )
   }
 
   return (
     <ClerkProvider publishableKey={publishableKey} tokenCache={tokenCache}>
-      <StatusBar style="light" backgroundColor="#070C14" />
+      <StatusBar style="light" backgroundColor={Colors.navy950} />
       <AuthGuard />
     </ClerkProvider>
   )
