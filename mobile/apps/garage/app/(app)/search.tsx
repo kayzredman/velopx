@@ -1,4 +1,4 @@
-import { useCallback, useState } from 'react'
+import {useCallback, useState, useMemo} from 'react'
 import {
   View,
   Text,
@@ -10,9 +10,10 @@ import {
   KeyboardAvoidingView,
   Platform,
   Alert,
+  Modal,
 } from 'react-native'
 import { SafeAreaView } from 'react-native-safe-area-context'
-import { Colors, ConditionBadge, useApi, FontFamily } from '@velopx/shared'
+import { ConditionBadge, useApi, FontFamily, useTheme, useThemedStyles, type ThemeColors} from '@velopx/shared'
 
 interface Part {
   id: string
@@ -39,13 +40,20 @@ interface VinResult {
 }
 
 const CONDITION_LABEL: Record<string, string> = { oem: 'OEM', aftermarket: 'Aftermarket', used: 'Used' }
-const STOCK_COLOR: Record<string, string> = {
-  in_stock: Colors.success,
-  limited: Colors.warning,
-  out_of_stock: Colors.error,
+function stockColors(colors: ThemeColors): Record<string, string> {
+  return {
+  in_stock: colors.success,
+  limited: colors.warning,
+  out_of_stock: colors.error,
+  }
 }
 
+
+
 export default function SearchScreen() {
+  const styles = useThemedStyles(createStyles)
+  const { colors } = useTheme()
+  const STOCK_COLOR = useMemo(() => stockColors(colors), [colors])
   const { apiFetch } = useApi()
   const [query, setQuery] = useState('')
   const [condition, setCondition] = useState<string>('')
@@ -197,7 +205,7 @@ export default function SearchScreen() {
                   value={vinInput}
                   onChangeText={(v) => { setVinInput(v.toUpperCase()); setVinError('') }}
                   placeholder="Enter 17-character VIN"
-                  placeholderTextColor={Colors.textMuted}
+                  placeholderTextColor={colors.textMuted}
                   autoCapitalize="characters"
                   maxLength={17}
                   returnKeyType="search"
@@ -209,7 +217,7 @@ export default function SearchScreen() {
                   disabled={vinLoading || vinInput.trim().length !== 17}
                 >
                   {vinLoading
-                    ? <ActivityIndicator color={Colors.navy950} size="small" />
+                    ? <ActivityIndicator color={colors.navy950} size="small" />
                     : <Text style={styles.searchBtnText}>Decode</Text>
                   }
                 </TouchableOpacity>
@@ -236,7 +244,7 @@ export default function SearchScreen() {
               value={query}
               onChangeText={setQuery}
               placeholder="Part name or OEM number"
-              placeholderTextColor={Colors.textMuted}
+              placeholderTextColor={colors.textMuted}
               returnKeyType="search"
               onSubmitEditing={doSearch}
             />
@@ -269,7 +277,7 @@ export default function SearchScreen() {
         </View>
 
         {loading ? (
-          <ActivityIndicator color={Colors.orange500} style={{ marginTop: 40 }} />
+          <ActivityIndicator color={colors.orange500} style={{ marginTop: 40 }} />
         ) : (
           <FlatList
             data={results}
@@ -334,7 +342,7 @@ export default function SearchScreen() {
                   value={quoteNote}
                   onChangeText={setQuoteNote}
                   placeholder="Add a note (vehicle details, urgency, etc.)"
-                  placeholderTextColor={Colors.textMuted}
+                  placeholderTextColor={colors.textMuted}
                   multiline
                   numberOfLines={3}
                   textAlignVertical="top"
@@ -354,7 +362,7 @@ export default function SearchScreen() {
                     disabled={submittingQuote}
                   >
                     {submittingQuote
-                      ? <ActivityIndicator color={Colors.navy950} size="small" />
+                      ? <ActivityIndicator color={colors.navy950} size="small" />
                       : <Text style={styles.submitBtnText}>Send Request</Text>
                     }
                   </TouchableOpacity>
@@ -368,72 +376,64 @@ export default function SearchScreen() {
   )
 }
 
-const styles = StyleSheet.create({
-  safe: { flex: 1, backgroundColor: Colors.navy950 },
+function createStyles(c: ThemeColors) {
+  return StyleSheet.create({
+  safe: { flex: 1, backgroundColor: c.navy950 },
   searchBox: { padding: 20, gap: 12 },
-  title: { fontFamily: FontFamily.display, fontSize: 22, fontWeight: '700', color: Colors.textPrimary, marginBottom: 4 },
+  title: { fontFamily: FontFamily.display, fontSize: 22, fontWeight: '700', color: c.textPrimary, marginBottom: 4 },
   inputRow: { flexDirection: 'row', gap: 10 },
   input: {
     flex: 1,
-    backgroundColor: Colors.navy800,
+    backgroundColor: c.navy800,
     borderRadius: 12,
     borderWidth: 1,
-    borderColor: Colors.navy700,
+    borderColor: c.navy700,
     paddingHorizontal: 14,
     paddingVertical: 12,
-    color: Colors.textPrimary,
+    color: c.textPrimary,
     fontSize: 14,
   },
   searchBtn: {
-    backgroundColor: Colors.orange500,
+    backgroundColor: c.orange500,
     borderRadius: 12,
     paddingHorizontal: 16,
     justifyContent: 'center',
   },
-  searchBtnText: { color: Colors.navy950, fontWeight: '700', fontSize: 13 },
+  searchBtnText: { color: c.navy950, fontWeight: '700', fontSize: 13 },
   filterRow: { flexDirection: 'row', gap: 8 },
   filterChip: {
     paddingHorizontal: 12,
     paddingVertical: 6,
     borderRadius: 20,
-    backgroundColor: Colors.navy800,
+    backgroundColor: c.navy800,
     borderWidth: 1,
-    borderColor: Colors.navy700,
+    borderColor: c.navy700,
   },
-  filterChipActive: { backgroundColor: Colors.orange500, borderColor: Colors.orange500 },
-  filterChipText: { fontSize: 12, color: Colors.textSecondary },
-  filterChipTextActive: { color: Colors.navy950, fontWeight: '600' },
-  rfqBtn: { backgroundColor: Colors.orange500, borderRadius: 12, paddingVertical: 12, alignItems: 'center' },
-  rfqBtnText: { color: Colors.navy950, fontWeight: '700', fontSize: 14 },
+  filterChipActive: { backgroundColor: c.orange500, borderColor: c.orange500 },
+  filterChipText: { fontSize: 12, color: c.textSecondary },
+  filterChipTextActive: { color: c.navy950, fontWeight: '600' },
+  rfqBtn: { backgroundColor: c.orange500, borderRadius: 12, paddingVertical: 12, alignItems: 'center' },
+  rfqBtnText: { color: c.navy950, fontWeight: '700', fontSize: 14 },
   list: { padding: 20, gap: 12 },
   card: {
-    backgroundColor: Colors.navy900,
+    backgroundColor: c.navy900,
     borderRadius: 14,
     borderWidth: 1,
-    borderColor: Colors.navy700,
+    borderColor: c.navy700,
     padding: 16,
     gap: 10,
   },
-  cardSelected: { borderColor: Colors.orange500, backgroundColor: 'rgba(245,166,35,0.08)' },
+  cardSelected: { borderColor: c.orange500, backgroundColor: 'rgba(245,166,35,0.08)' },
   cardTop: { flexDirection: 'row', alignItems: 'flex-start' },
-  partName: { fontSize: 15, fontWeight: '600', color: Colors.textPrimary },
-  oemNumber: { fontSize: 12, color: Colors.textSecondary, marginTop: 2 },
-  dealerName: { fontSize: 11, color: Colors.textMuted, marginTop: 4 },
-  price: { fontSize: 15, fontWeight: '700', color: Colors.textPrimary },
+  partName: { fontSize: 15, fontWeight: '600', color: c.textPrimary },
+  oemNumber: { fontSize: 12, color: c.textSecondary, marginTop: 2 },
+  dealerName: { fontSize: 11, color: c.textMuted, marginTop: 4 },
+  price: { fontSize: 15, fontWeight: '700', color: c.textPrimary },
   badge: { paddingHorizontal: 7, paddingVertical: 2, borderRadius: 6 },
-  badgeText: { fontSize: 11, color: Colors.textSecondary },
+  badgeText: { fontSize: 11, color: c.textSecondary },
   stockDot: { alignSelf: 'flex-start', paddingHorizontal: 8, paddingVertical: 3, borderRadius: 6 },
-  stockText: { fontSize: 11, color: Colors.white, fontWeight: '500' },
-  emptyText: { textAlign: 'center', color: Colors.textSecondary, marginTop: 40, fontSize: 14 },
-  cardBottom: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
-  rfqBtn: {
-    borderWidth: 1,
-    borderColor: Colors.orange500,
-    borderRadius: 8,
-    paddingHorizontal: 12,
-    paddingVertical: 5,
-  },
-  rfqBtnText: { fontSize: 12, fontWeight: '600', color: Colors.orange500 },
+  stockText: { fontSize: 11, color: c.white, fontWeight: '500' },
+  emptyText: { textAlign: 'center', color: c.textSecondary, marginTop: 40, fontSize: 14 },
   // Modal
   modalOverlay: {
     flex: 1,
@@ -441,25 +441,25 @@ const styles = StyleSheet.create({
     justifyContent: 'flex-end',
   },
   modalSheet: {
-    backgroundColor: Colors.navy900,
+    backgroundColor: c.navy900,
     borderTopLeftRadius: 20,
     borderTopRightRadius: 20,
     padding: 24,
     gap: 16,
   },
-  modalTitle: { fontSize: 18, fontWeight: '700', color: Colors.textPrimary },
+  modalTitle: { fontSize: 18, fontWeight: '700', color: c.textPrimary },
   modalPartRow: { flexDirection: 'row', alignItems: 'flex-start', gap: 12 },
-  modalPartName: { fontSize: 15, fontWeight: '600', color: Colors.textPrimary },
-  modalDealerName: { fontSize: 12, color: Colors.textMuted, marginTop: 2 },
-  modalPrice: { fontSize: 15, fontWeight: '700', color: Colors.orange500 },
+  modalPartName: { fontSize: 15, fontWeight: '600', color: c.textPrimary },
+  modalDealerName: { fontSize: 12, color: c.textMuted, marginTop: 2 },
+  modalPrice: { fontSize: 15, fontWeight: '700', color: c.orange500 },
   modalNoteInput: {
-    backgroundColor: Colors.navy800,
+    backgroundColor: c.navy800,
     borderRadius: 12,
     borderWidth: 1,
-    borderColor: Colors.navy700,
+    borderColor: c.navy700,
     paddingHorizontal: 14,
     paddingVertical: 12,
-    color: Colors.textPrimary,
+    color: c.textPrimary,
     fontSize: 14,
     minHeight: 80,
   },
@@ -467,46 +467,47 @@ const styles = StyleSheet.create({
   cancelBtn: {
     flex: 1,
     borderWidth: 1,
-    borderColor: Colors.navy700,
+    borderColor: c.navy700,
     borderRadius: 12,
     paddingVertical: 13,
     alignItems: 'center',
   },
-  cancelBtnText: { color: Colors.textSecondary, fontWeight: '600' },
+  cancelBtnText: { color: c.textSecondary, fontWeight: '600' },
   submitBtn: {
     flex: 2,
-    backgroundColor: Colors.orange500,
+    backgroundColor: c.orange500,
     borderRadius: 12,
     paddingVertical: 13,
     alignItems: 'center',
   },
-  submitBtnText: { color: Colors.navy950, fontWeight: '700' },
+  submitBtnText: { color: c.navy950, fontWeight: '700' },
   btnDisabled: { opacity: 0.5 },
   // VIN lookup
   vinToggle: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    backgroundColor: Colors.navy800,
+    backgroundColor: c.navy800,
     borderRadius: 10,
     paddingHorizontal: 14,
     paddingVertical: 10,
     borderWidth: 1,
-    borderColor: Colors.navy700,
+    borderColor: c.navy700,
   },
-  vinToggleText: { fontSize: 13, color: Colors.orange500, fontWeight: '600' },
-  vinToggleChevron: { fontSize: 11, color: Colors.textMuted },
+  vinToggleText: { fontSize: 13, color: c.orange500, fontWeight: '600' },
+  vinToggleChevron: { fontSize: 11, color: c.textMuted },
   vinBox: { gap: 8 },
-  vinError: { fontSize: 12, color: Colors.error },
+  vinError: { fontSize: 12, color: c.error },
   vinCard: {
-    backgroundColor: Colors.navy800,
+    backgroundColor: c.navy800,
     borderRadius: 10,
     borderWidth: 1,
-    borderColor: Colors.navy700,
+    borderColor: c.navy700,
     padding: 12,
     gap: 4,
   },
-  vinCarTitle: { fontSize: 15, fontWeight: '700', color: Colors.textPrimary, marginBottom: 2 },
-  vinDetail: { fontSize: 12, color: Colors.textSecondary },
-  vinHint: { fontSize: 11, color: Colors.orange500, marginTop: 4 },
+  vinCarTitle: { fontSize: 15, fontWeight: '700', color: c.textPrimary, marginBottom: 2 },
+  vinDetail: { fontSize: 12, color: c.textSecondary },
+  vinHint: { fontSize: 11, color: c.orange500, marginTop: 4 },
 })
+}

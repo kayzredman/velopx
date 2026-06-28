@@ -2,7 +2,6 @@ import { clerkMiddleware, createRouteMatcher } from '@clerk/nextjs/server'
 import { NextResponse } from 'next/server'
 import type { NextRequest } from 'next/server'
 import { hasValidClerkKeys } from '@/lib/clerkConfig'
-import { getRoleHomePath } from '@/lib/utils'
 
 const isPublicRoute = createRouteMatcher([
   '/',
@@ -22,16 +21,11 @@ function devMiddleware(request: NextRequest) {
 
 // Clerk v6 + Next.js 15: await auth() and auth.protect() in middleware
 const clerkHandler = clerkMiddleware(async (auth, request) => {
-  if (request.nextUrl.pathname === '/') {
-    const { userId, sessionClaims } = await auth()
-    if (userId) {
-      const metadata = sessionClaims?.metadata as Record<string, unknown> | undefined
-      const role = metadata?.role as string | undefined
-      const roles = Array.isArray(metadata?.roles)
-        ? (metadata.roles as unknown[]).filter((r): r is string => typeof r === 'string')
-        : undefined
-      return NextResponse.redirect(new URL(getRoleHomePath(role, roles), request.url))
-    }
+  const { userId } = await auth()
+
+  // Signed-in home → workspace picker (roles resolved server-side on that page)
+  if (userId && request.nextUrl.pathname === '/') {
+    return NextResponse.redirect(new URL('/select-portal', request.url))
   }
 
   if (!isPublicRoute(request)) {

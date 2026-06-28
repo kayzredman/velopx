@@ -1,6 +1,9 @@
+import { currentUser } from '@clerk/nextjs/server'
 import { AppSidebar } from '@/components/layout/AppSidebar'
+import { ThemeBar } from '@/components/layout/ThemeBar'
 import { apiFetch } from '@/lib/api'
 import { safeAuth } from '@/lib/safeAuth'
+import { primaryRoleForClerkUser, rolesForClerkUser } from '@/lib/sessionMetadata'
 import { isDealerRole } from '@/lib/utils'
 
 async function getSidebarBadges(role?: string | null, roles?: string[] | null): Promise<Record<string, number>> {
@@ -16,17 +19,19 @@ async function getSidebarBadges(role?: string | null, roles?: string[] | null): 
 
 export default async function DashboardLayout({ children }: { children: React.ReactNode }) {
   const { sessionClaims } = await safeAuth()
-  const metadata = sessionClaims?.metadata as Record<string, unknown> | undefined
-  const role = metadata?.role as string | undefined
-  const roles = Array.isArray(metadata?.roles)
-    ? (metadata.roles as unknown[]).filter((r): r is string => typeof r === 'string')
-    : undefined
+  const clerkUser = await currentUser()
+  const claims = sessionClaims as Record<string, unknown> | undefined
+  const role = primaryRoleForClerkUser(clerkUser, claims)
+  const roles = rolesForClerkUser(clerkUser, claims)
   const badges = await getSidebarBadges(role, roles)
 
   return (
     <div className="flex min-h-screen flex-col md:flex-row">
       <AppSidebar role={role} roles={roles} badges={badges} />
-      <main className="flex-1 overflow-y-auto bg-background p-6 md:p-8">{children}</main>
+      <main className="flex-1 overflow-y-auto bg-background p-6 md:p-8 min-h-screen">
+        <ThemeBar />
+        {children}
+      </main>
     </div>
   )
 }

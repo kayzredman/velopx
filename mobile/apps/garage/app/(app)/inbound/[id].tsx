@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useRef, useState } from 'react'
+import {useCallback, useEffect, useRef, useState, useMemo} from 'react'
 import {
   View,
   Text,
@@ -11,7 +11,7 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context'
 import WebView from 'react-native-webview'
 import { useLocalSearchParams, useRouter } from 'expo-router'
-import { Colors, useApi } from '@velopx/shared'
+import { useApi, useTheme, useThemedStyles, type ThemeColors} from '@velopx/shared'
 
 // ── Types ──────────────────────────────────────────────────────────────────
 
@@ -112,6 +112,8 @@ function buildLeafletHtml(
 // ── Screen ─────────────────────────────────────────────────────────────────
 
 export default function InboundTrackingScreen() {
+  const styles = useThemedStyles(createStyles)
+  const { colors } = useTheme()
   const { id } = useLocalSearchParams<{ id: string }>()
   const router = useRouter()
   const { apiFetch } = useApi()
@@ -200,7 +202,7 @@ export default function InboundTrackingScreen() {
   if (loading) {
     return (
       <SafeAreaView style={styles.safe}>
-        <ActivityIndicator color={Colors.orange500} style={{ flex: 1 }} />
+        <ActivityIndicator color={colors.orange500} style={{ flex: 1 }} />
       </SafeAreaView>
     )
   }
@@ -371,8 +373,9 @@ export default function InboundTrackingScreen() {
 
 // ── Styles ─────────────────────────────────────────────────────────────────
 
-const styles = StyleSheet.create({
-  safe: { flex: 1, backgroundColor: Colors.navy950 },
+function createStyles(c: ThemeColors) {
+  return StyleSheet.create({
+  safe: { flex: 1, backgroundColor: c.navy950 },
   header: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -382,37 +385,37 @@ const styles = StyleSheet.create({
     gap: 12,
   },
   backBtn: { paddingRight: 4 },
-  backText: { color: Colors.orange500, fontSize: 15 },
-  headerTitle: { fontSize: 18, fontWeight: '700', color: Colors.textPrimary },
-  mapContainer: { height: 260, backgroundColor: Colors.navy900 },
-  map: { flex: 1, backgroundColor: Colors.navy900 },
+  backText: { color: c.orange500, fontSize: 15 },
+  headerTitle: { fontSize: 18, fontWeight: '700', color: c.textPrimary },
+  mapContainer: { height: 260, backgroundColor: c.navy900 },
+  map: { flex: 1, backgroundColor: c.navy900 },
   body: { padding: 20, gap: 16 },
   etaCard: {
-    backgroundColor: Colors.navy900,
+    backgroundColor: c.navy900,
     borderRadius: 14,
     borderWidth: 1,
-    borderColor: Colors.navy700,
+    borderColor: c.navy700,
     flexDirection: 'row',
     alignItems: 'center',
     padding: 16,
   },
   etaStat: { flex: 1, alignItems: 'center' },
-  etaValue: { fontSize: 20, fontWeight: '700', color: Colors.textPrimary },
-  etaLabel: { fontSize: 11, color: Colors.textSecondary, marginTop: 2 },
-  etaDivider: { width: 1, height: 40, backgroundColor: Colors.navy700 },
+  etaValue: { fontSize: 20, fontWeight: '700', color: c.textPrimary },
+  etaLabel: { fontSize: 11, color: c.textSecondary, marginTop: 2 },
+  etaDivider: { width: 1, height: 40, backgroundColor: c.navy700 },
   section: { gap: 10 },
   sectionTitle: {
     fontSize: 13,
     fontWeight: '600',
-    color: Colors.textSecondary,
+    color: c.textSecondary,
     textTransform: 'uppercase',
     letterSpacing: 0.8,
   },
   partsCard: {
-    backgroundColor: Colors.navy900,
+    backgroundColor: c.navy900,
     borderRadius: 14,
     borderWidth: 1,
-    borderColor: Colors.navy700,
+    borderColor: c.navy700,
     overflow: 'hidden',
   },
   partRow: {
@@ -422,57 +425,58 @@ const styles = StyleSheet.create({
     paddingHorizontal: 14,
     paddingVertical: 12,
   },
-  partRowBorder: { borderTopWidth: 1, borderTopColor: Colors.navy700 },
-  partName: { fontSize: 14, color: Colors.textPrimary },
-  partQty: { fontSize: 14, fontWeight: '600', color: Colors.orange500 },
+  partRowBorder: { borderTopWidth: 1, borderTopColor: c.navy700 },
+  partName: { fontSize: 14, color: c.textPrimary },
+  partQty: { fontSize: 14, fontWeight: '600', color: c.orange500 },
   timelineRow: { flexDirection: 'row', alignItems: 'flex-start', minHeight: 36 },
   timelineLeft: { width: 28, alignItems: 'center' },
   dot: { width: 12, height: 12, borderRadius: 6, marginTop: 3 },
-  dotPast: { backgroundColor: Colors.success },
-  dotCurrent: { backgroundColor: Colors.orange500 },
-  dotFuture: { backgroundColor: Colors.navy700, borderWidth: 1, borderColor: Colors.navy600 },
+  dotPast: { backgroundColor: c.success },
+  dotCurrent: { backgroundColor: c.orange500 },
+  dotFuture: { backgroundColor: c.navy700, borderWidth: 1, borderColor: c.navy600 },
   line: { width: 2, flex: 1, marginTop: 2 },
-  linePast: { backgroundColor: Colors.success },
-  lineFuture: { backgroundColor: Colors.navy700 },
-  timelineLabel: { fontSize: 14, color: Colors.textPrimary, lineHeight: 20, paddingTop: 1 },
-  labelCurrent: { color: Colors.orange500, fontWeight: '600' },
-  labelFuture: { color: Colors.textSecondary },
+  linePast: { backgroundColor: c.success },
+  lineFuture: { backgroundColor: c.navy700 },
+  timelineLabel: { fontSize: 14, color: c.textPrimary, lineHeight: 20, paddingTop: 1 },
+  labelCurrent: { color: c.orange500, fontWeight: '600' },
+  labelFuture: { color: c.textSecondary },
   infoCard: {
-    backgroundColor: Colors.navy900,
+    backgroundColor: c.navy900,
     borderRadius: 14,
     borderWidth: 1,
-    borderColor: Colors.navy700,
+    borderColor: c.navy700,
     padding: 14,
     gap: 4,
   },
-  driverName: { fontSize: 15, fontWeight: '600', color: Colors.textPrimary },
-  infoDetail: { fontSize: 13, color: Colors.textSecondary },
+  driverName: { fontSize: 15, fontWeight: '600', color: c.textPrimary },
+  infoDetail: { fontSize: 13, color: c.textSecondary },
   actionRow: { gap: 10 },
   confirmBtn: {
-    backgroundColor: Colors.success,
+    backgroundColor: c.success,
     borderRadius: 12,
     paddingVertical: 14,
     alignItems: 'center',
   },
   btnDisabled: { opacity: 0.4 },
-  confirmText: { color: Colors.white, fontWeight: '700', fontSize: 15 },
+  confirmText: { color: c.white, fontWeight: '700', fontSize: 15 },
   disputeBtn: {
     borderRadius: 12,
     paddingVertical: 14,
     alignItems: 'center',
     borderWidth: 1.5,
-    borderColor: Colors.error,
+    borderColor: c.error,
   },
-  disputeText: { color: Colors.error, fontWeight: '700', fontSize: 15 },
+  disputeText: { color: c.error, fontWeight: '700', fontSize: 15 },
   centeredBox: { flex: 1, alignItems: 'center', justifyContent: 'center', gap: 12 },
-  errorText: { color: Colors.error, fontSize: 14 },
+  errorText: { color: c.error, fontSize: 14 },
   retryBtn: {
-    backgroundColor: Colors.navy800,
+    backgroundColor: c.navy800,
     borderRadius: 10,
     paddingHorizontal: 20,
     paddingVertical: 10,
     borderWidth: 1,
-    borderColor: Colors.navy700,
+    borderColor: c.navy700,
   },
-  retryText: { color: Colors.textPrimary, fontSize: 14 },
+  retryText: { color: c.textPrimary, fontSize: 14 },
 })
+}

@@ -1,17 +1,19 @@
 import { Tabs } from 'expo-router'
-import { Colors } from '@velopx/shared'
+import { useTheme } from '@velopx/shared'
 
 export default function DriverAppLayout() {
+  const { colors } = useTheme()
+
   return (
     <Tabs
       screenOptions={{
         headerShown: false,
         tabBarStyle: {
-          backgroundColor: Colors.navy900,
-          borderTopColor: Colors.navy700,
+          backgroundColor: colors.navy900,
+          borderTopColor: colors.navy700,
         },
-        tabBarActiveTintColor: Colors.orange500,
-        tabBarInactiveTintColor: Colors.textSecondary,
+        tabBarActiveTintColor: colors.orange500,
+        tabBarInactiveTintColor: colors.textSecondary,
       }}
     >
       <Tabs.Screen name="index" options={{ title: 'Deliveries' }} />

@@ -107,7 +107,7 @@ export function PartImageInput({ value, onChange, disabled }: PartImageInputProp
           {value.map((url, i) => (
             <li
               key={`${url}-${i}`}
-              className="flex items-center gap-2 rounded-md border border-border bg-navy-950 px-3 py-2 text-xs"
+              className="flex items-center gap-2 rounded-md border border-border bg-muted px-3 py-2 text-xs"
             >
               <span className="min-w-0 flex-1 truncate text-muted-foreground">{url}</span>
               <Button

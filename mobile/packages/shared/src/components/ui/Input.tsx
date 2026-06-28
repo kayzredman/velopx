@@ -1,4 +1,4 @@
-import React, { useState } from 'react'
+import React, { useMemo, useState } from 'react'
 import {
   View,
   TextInput,
@@ -7,12 +7,35 @@ import {
   StyleSheet,
   type TextInputProps,
 } from 'react-native'
-import { Colors } from '../../constants/colors'
+import { useTheme } from '../../theme/ThemeProvider'
+import type { ThemeColors } from '../../theme/colors'
 
 interface InputProps extends TextInputProps {
   label?: string
   error?: string
   rightIcon?: React.ReactNode
+}
+
+function createStyles(c: ThemeColors) {
+  return StyleSheet.create({
+    container: { gap: 6 },
+    label: { fontSize: 13, fontWeight: '500', color: c.textSecondary },
+    inputRow: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      backgroundColor: c.navy800,
+      borderRadius: 10,
+      borderWidth: 1,
+      borderColor: c.navy700,
+      paddingHorizontal: 14,
+      height: 52,
+    },
+    inputError: { borderColor: c.error },
+    input: { flex: 1, fontSize: 15, color: c.textPrimary },
+    iconBtn: { paddingLeft: 8 },
+    iconText: { fontSize: 16 },
+    errorText: { fontSize: 12, color: c.error },
+  })
 }
 
 export function Input({
@@ -23,6 +46,8 @@ export function Input({
   style,
   ...rest
 }: InputProps) {
+  const { colors } = useTheme()
+  const styles = useMemo(() => createStyles(colors), [colors])
   const [isPasswordVisible, setIsPasswordVisible] = useState(false)
   const isPassword = secureTextEntry === true
 
@@ -33,8 +58,8 @@ export function Input({
       <View style={[styles.inputRow, error ? styles.inputError : null]}>
         <TextInput
           style={[styles.input, style]}
-          placeholderTextColor={Colors.textMuted}
-          selectionColor={Colors.orange500}
+          placeholderTextColor={colors.textMuted}
+          selectionColor={colors.orange500}
           secureTextEntry={isPassword && !isPasswordVisible}
           {...rest}
         />
@@ -49,51 +74,10 @@ export function Input({
           </TouchableOpacity>
         )}
 
-        {rightIcon && !isPassword && (
-          <View style={styles.iconBtn}>{rightIcon}</View>
-        )}
+        {rightIcon && !isPassword && <View style={styles.iconBtn}>{rightIcon}</View>}
       </View>
 
       {error && <Text style={styles.errorText}>{error}</Text>}
     </View>
   )
 }
-
-const styles = StyleSheet.create({
-  container: {
-    gap: 6,
-  },
-  label: {
-    fontSize: 13,
-    fontWeight: '500',
-    color: Colors.textSecondary,
-  },
-  inputRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: Colors.navy800,
-    borderRadius: 10,
-    borderWidth: 1,
-    borderColor: Colors.navy700,
-    paddingHorizontal: 14,
-    height: 52,
-  },
-  inputError: {
-    borderColor: Colors.error,
-  },
-  input: {
-    flex: 1,
-    fontSize: 15,
-    color: Colors.textPrimary,
-  },
-  iconBtn: {
-    paddingLeft: 8,
-  },
-  iconText: {
-    fontSize: 16,
-  },
-  errorText: {
-    fontSize: 12,
-    color: Colors.error,
-  },
-})

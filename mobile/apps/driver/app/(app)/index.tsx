@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from 'react'
+import {useCallback, useEffect, useState, useMemo} from 'react'
 import {
   View,
   Text,
@@ -9,7 +9,7 @@ import {
   TouchableOpacity,
 } from 'react-native'
 import { SafeAreaView } from 'react-native-safe-area-context'
-import { Colors, useApi } from '@velopx/shared'
+import { useApi, useTheme, useThemedStyles, type ThemeColors} from '@velopx/shared'
 import { useRouter } from 'expo-router'
 
 interface OrderItem {
@@ -33,19 +33,26 @@ interface Delivery {
   }
 }
 
-const STATUS_COLOR: Record<string, string> = {
-  pending:    Colors.textMuted,
-  assigned:   Colors.info,
-  collected:  Colors.warning,
+function deliveryStatusColors(colors: ThemeColors): Record<string, string> {
+  return {
+  pending:    colors.textMuted,
+  assigned:   colors.info,
+  collected:  colors.warning,
   in_transit: '#8B5CF6',
-  delivered:  Colors.success,
-  confirmed:  Colors.success,
-  disputed:   Colors.error,
+  delivered:  colors.success,
+  confirmed:  colors.success,
+  disputed:   colors.error,
+  }
 }
 
 
 
+
+
 export default function DriverDeliveriesScreen() {
+  const styles = useThemedStyles(createStyles)
+  const { colors } = useTheme()
+  const STATUS_COLOR = useMemo(() => deliveryStatusColors(colors), [colors])
   const { apiFetch } = useApi()
   const router = useRouter()
   const [deliveries, setDeliveries] = useState<Delivery[]>([])
@@ -105,7 +112,7 @@ export default function DriverDeliveriesScreen() {
   if (loading) {
     return (
       <SafeAreaView style={styles.safe}>
-        <ActivityIndicator color={Colors.orange500} style={{ flex: 1 }} />
+        <ActivityIndicator color={colors.orange500} style={{ flex: 1 }} />
       </SafeAreaView>
     )
   }
@@ -123,7 +130,7 @@ export default function DriverDeliveriesScreen() {
         data={deliveries}
         keyExtractor={(d) => d.id}
         contentContainerStyle={styles.list}
-        refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={Colors.orange500} />}
+        refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={colors.orange500} />}
         ListEmptyComponent={
           <View style={styles.emptyBox}>
             <Text style={styles.emptyText}>No deliveries assigned yet.</Text>
@@ -151,8 +158,8 @@ export default function DriverDeliveriesScreen() {
                     })}
                   </Text>
                 </View>
-                <View style={[styles.statusBadge, { borderColor: STATUS_COLOR[item.status] ?? Colors.navy700 }]}>
-                  <Text style={[styles.statusText, { color: STATUS_COLOR[item.status] ?? Colors.textSecondary }]}>
+                <View style={[styles.statusBadge, { borderColor: STATUS_COLOR[item.status] ?? colors.navy700 }]}>
+                  <Text style={[styles.statusText, { color: STATUS_COLOR[item.status] ?? colors.textSecondary }]}>
                     {item.status.replace('_', ' ')}
                   </Text>
                 </View>
@@ -188,44 +195,46 @@ export default function DriverDeliveriesScreen() {
   )
 }
 
-const styles = StyleSheet.create({
-  safe: { flex: 1, backgroundColor: Colors.navy950 },
+function createStyles(c: ThemeColors) {
+  return StyleSheet.create({
+  safe: { flex: 1, backgroundColor: c.navy950 },
   header: { paddingHorizontal: 20, paddingTop: 20, paddingBottom: 12 },
-  title: { fontSize: 22, fontWeight: '700', color: Colors.textPrimary },
-  count: { fontSize: 13, color: Colors.textSecondary, marginTop: 2 },
+  title: { fontSize: 22, fontWeight: '700', color: c.textPrimary },
+  count: { fontSize: 13, color: c.textSecondary, marginTop: 2 },
   list: { padding: 20, gap: 12 },
   card: {
-    backgroundColor: Colors.navy900,
+    backgroundColor: c.navy900,
     borderRadius: 14,
     borderWidth: 1,
-    borderColor: Colors.navy700,
+    borderColor: c.navy700,
     padding: 16,
     gap: 10,
   },
   cardTop: { flexDirection: 'row', alignItems: 'flex-start' },
-  claimRef: { fontSize: 13, fontWeight: '600', color: Colors.textPrimary },
-  amount: { fontSize: 15, fontWeight: '700', color: Colors.textPrimary, marginTop: 2 },
-  date: { fontSize: 11, color: Colors.textSecondary, marginTop: 3 },
+  claimRef: { fontSize: 13, fontWeight: '600', color: c.textPrimary },
+  amount: { fontSize: 15, fontWeight: '700', color: c.textPrimary, marginTop: 2 },
+  date: { fontSize: 11, color: c.textSecondary, marginTop: 3 },
   statusBadge: { borderWidth: 1, borderRadius: 8, paddingHorizontal: 8, paddingVertical: 3 },
   statusText: { fontSize: 11, fontWeight: '600', textTransform: 'capitalize' },
-  itemList: { fontSize: 12, color: Colors.textSecondary },
+  itemList: { fontSize: 12, color: c.textSecondary },
   actionBtn: {
-    backgroundColor: Colors.orange500,
+    backgroundColor: c.orange500,
     borderRadius: 10,
     paddingVertical: 10,
     alignItems: 'center',
     marginTop: 4,
   },
   btnDisabled: { opacity: 0.5 },
-  actionBtnText: { color: Colors.navy950, fontWeight: '700', fontSize: 13 },
+  actionBtnText: { color: c.navy950, fontWeight: '700', fontSize: 13 },
   detailBtn: {
-    backgroundColor: Colors.navy700,
+    backgroundColor: c.navy700,
     borderRadius: 10,
     paddingVertical: 10,
     alignItems: 'center',
     marginTop: 4,
   },
-  detailBtnText: { color: Colors.orange500, fontWeight: '600', fontSize: 13 },
+  detailBtnText: { color: c.orange500, fontWeight: '600', fontSize: 13 },
   emptyBox: { alignItems: 'center', paddingTop: 60 },
-  emptyText: { color: Colors.textSecondary, fontSize: 14 },
+  emptyText: { color: c.textSecondary, fontSize: 14 },
 })
+}

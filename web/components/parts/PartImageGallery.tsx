@@ -19,7 +19,7 @@ export function PartImageGallery({ images, alt, className }: PartImageGalleryPro
 
   return (
     <div className={cn('space-y-3', className)}>
-      <div className="relative aspect-[4/3] overflow-hidden rounded-lg border border-border bg-navy-950">
+      <div className="relative aspect-[4/3] overflow-hidden rounded-lg border border-border bg-muted">
         <Image
           src={partImageSrc(main ? [main] : [])}
           alt={alt}
@@ -75,7 +75,7 @@ export function PartThumbnail({
   return (
     <div
       className={cn(
-        'relative aspect-[4/3] overflow-hidden rounded-md border border-border bg-navy-950',
+        'relative aspect-[4/3] overflow-hidden rounded-md border border-border bg-muted',
         className
       )}
     >

@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from 'react'
+import { useCallback, useEffect, useMemo, useState } from 'react'
 import {
   View,
   Text,
@@ -11,7 +11,7 @@ import {
   Alert,
 } from 'react-native'
 import { SafeAreaView } from 'react-native-safe-area-context'
-import { Colors, useApi } from '@velopx/shared'
+import { useApi, useTheme, useThemedStyles, type ThemeColors } from '@velopx/shared'
 
 interface Order {
   id: string
@@ -30,14 +30,19 @@ interface Driver {
   email: string
 }
 
-const STATUS_COLOR: Record<string, string> = {
-  confirmed:  Colors.info,
-  dispatched: '#8B5CF6',
-  delivered:  Colors.success,
-  completed:  Colors.success,
+function statusColors(colors: ThemeColors): Record<string, string> {
+  return {
+    confirmed: colors.info,
+    dispatched: '#8B5CF6',
+    delivered: colors.success,
+    completed: colors.success,
+  }
 }
 
 export default function DispatchScreen() {
+  const styles = useThemedStyles(createStyles)
+  const { colors } = useTheme()
+  const STATUS_COLOR = useMemo(() => statusColors(colors), [colors])
   const { apiFetch } = useApi()
   const [orders, setOrders]         = useState<Order[]>([])
   const [loading, setLoading]       = useState(true)
@@ -50,7 +55,6 @@ export default function DispatchScreen() {
 
   const fetchOrders = useCallback(async () => {
     try {
-      // Confirmed orders are paid + awaiting dispatch
       const res = await apiFetch<{ data: Order[] }>(
         '/v1/orders?tab=confirmed&view=seller&limit=50',
       )
@@ -87,12 +91,10 @@ export default function DispatchScreen() {
     }
     setDispatching(true)
     try {
-      // Step 1 — create the delivery
       const created = await apiFetch<{ data: { id: string } }>('/v1/deliveries', {
         method: 'POST',
         body: JSON.stringify({ orderId: dispatchModal.orderId }),
       })
-      // Step 2 — assign the driver
       await apiFetch(`/v1/deliveries/${created.data.id}/status`, {
         method: 'PATCH',
         body: JSON.stringify({ status: 'assigned', driverId: selectedDriverId }),
@@ -108,22 +110,21 @@ export default function DispatchScreen() {
   }
 
   return (
-    <SafeAreaView style={s.safe}>
-      {/* Header */}
-      <View style={s.header}>
-        <Text style={s.title}>Dispatch</Text>
-        <Text style={s.subtitle}>Confirmed orders awaiting dispatch</Text>
+    <SafeAreaView style={styles.safe}>
+      <View style={styles.header}>
+        <Text style={styles.title}>Dispatch</Text>
+        <Text style={styles.subtitle}>Confirmed orders awaiting dispatch</Text>
       </View>
 
       {loading && (
-        <View style={s.center}>
-          <ActivityIndicator color={Colors.orange500} />
+        <View style={styles.center}>
+          <ActivityIndicator color={colors.orange500} />
         </View>
       )}
 
       {!loading && orders.length === 0 && (
-        <View style={s.center}>
-          <Text style={s.empty}>No confirmed orders awaiting dispatch</Text>
+        <View style={styles.center}>
+          <Text style={styles.empty}>No confirmed orders awaiting dispatch</Text>
         </View>
       )}
 
@@ -131,48 +132,45 @@ export default function DispatchScreen() {
         <FlatList
           data={orders}
           keyExtractor={(o) => o.id}
-          contentContainerStyle={s.list}
+          contentContainerStyle={styles.list}
           refreshControl={
-            <RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={Colors.orange500} />
+            <RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={colors.orange500} />
           }
           renderItem={({ item: order }) => (
-            <View style={s.card}>
-              {/* Top row */}
-              <View style={s.cardTop}>
-                <View style={s.cardLeft}>
-                  <Text style={s.orderId}>#{order.id.slice(-6).toUpperCase()}</Text>
-                  <Text style={s.buyerName} numberOfLines={1}>
+            <View style={styles.card}>
+              <View style={styles.cardTop}>
+                <View style={styles.cardLeft}>
+                  <Text style={styles.orderId}>#{order.id.slice(-6).toUpperCase()}</Text>
+                  <Text style={styles.buyerName} numberOfLines={1}>
                     {order.buyer?.name ?? order.buyer?.email ?? 'Buyer'}
                   </Text>
                 </View>
                 <View>
-                  <Text style={s.amount}>
+                  <Text style={styles.amount}>
                     {order.currency} {Number(order.totalAmount).toLocaleString()}
                   </Text>
-                  <Text style={[s.statusBadge, { color: STATUS_COLOR[order.status] ?? Colors.textSecondary }]}>
+                  <Text style={[styles.statusBadge, { color: STATUS_COLOR[order.status] ?? colors.textSecondary }]}>
                     {order.status.toUpperCase()}
                   </Text>
                 </View>
               </View>
 
-              {/* Parts summary */}
-              <Text style={s.parts} numberOfLines={2}>
+              <Text style={styles.parts} numberOfLines={2}>
                 {order.items.map((i) => `${i.quantity}× ${i.part.name}`).join(', ')}
               </Text>
 
-              {/* Delivery status or assign button */}
               {order.delivery ? (
-                <View style={s.deliveryBadge}>
-                  <Text style={s.deliveryText}>
+                <View style={styles.deliveryBadge}>
+                  <Text style={styles.deliveryText}>
                     Driver: {order.delivery.driver?.name ?? order.delivery.driver?.email ?? 'Assigned'} · {order.delivery.status.toUpperCase()}
                   </Text>
                 </View>
               ) : (
                 <TouchableOpacity
-                  style={s.dispatchBtn}
+                  style={styles.dispatchBtn}
                   onPress={() => { void openDispatch(order.id) }}
                 >
-                  <Text style={s.dispatchBtnText}>Assign Driver & Dispatch</Text>
+                  <Text style={styles.dispatchBtnText}>Assign Driver & Dispatch</Text>
                 </TouchableOpacity>
               )}
             </View>
@@ -180,56 +178,55 @@ export default function DispatchScreen() {
         />
       )}
 
-      {/* Assign driver modal */}
       <Modal
         visible={!!dispatchModal}
         transparent
         animationType="slide"
         onRequestClose={() => setDispatchModal(null)}
       >
-        <View style={s.modalOverlay}>
-          <View style={s.modalBox}>
-            <Text style={s.modalTitle}>Assign Driver</Text>
-            <Text style={s.modalSub}>Select a registered driver for this delivery</Text>
+        <View style={styles.modalOverlay}>
+          <View style={styles.modalBox}>
+            <Text style={styles.modalTitle}>Assign Driver</Text>
+            <Text style={styles.modalSub}>Select a registered driver for this delivery</Text>
             {loadingDrivers ? (
-              <ActivityIndicator color={Colors.orange500} style={{ marginVertical: 16 }} />
+              <ActivityIndicator color={colors.orange500} style={{ marginVertical: 16 }} />
             ) : drivers.length === 0 ? (
-              <Text style={[s.modalSub, { color: Colors.textSecondary, textAlign: 'center', marginVertical: 16 }]}>
+              <Text style={[styles.modalSub, { color: colors.textSecondary, textAlign: 'center', marginVertical: 16 }]}>
                 No registered drivers available
               </Text>
             ) : (
-              <View style={s.driverList}>
+              <View style={styles.driverList}>
                 {drivers.map((d) => (
                   <TouchableOpacity
                     key={d.id}
-                    style={[s.driverRow, selectedDriverId === d.id && s.driverRowSelected]}
+                    style={[styles.driverRow, selectedDriverId === d.id && styles.driverRowSelected]}
                     onPress={() => setSelectedDriverId(d.id)}
                   >
-                    <Text style={[s.driverRowText, selectedDriverId === d.id && s.driverRowTextSelected]}>
+                    <Text style={[styles.driverRowText, selectedDriverId === d.id && styles.driverRowTextSelected]}>
                       {d.name ?? d.email}
                     </Text>
                     {selectedDriverId === d.id && (
-                      <Text style={{ color: Colors.orange500, fontSize: 16 }}>✓</Text>
+                      <Text style={{ color: colors.orange500, fontSize: 16 }}>✓</Text>
                     )}
                   </TouchableOpacity>
                 ))}
               </View>
             )}
-            <View style={s.modalButtons}>
+            <View style={styles.modalButtons}>
               <TouchableOpacity
-                style={s.cancelBtn}
+                style={styles.cancelBtn}
                 onPress={() => setDispatchModal(null)}
               >
-                <Text style={s.cancelText}>Cancel</Text>
+                <Text style={styles.cancelText}>Cancel</Text>
               </TouchableOpacity>
               <TouchableOpacity
-                style={[s.confirmBtn, dispatching && s.disabled]}
+                style={[styles.confirmBtn, dispatching && styles.disabled]}
                 onPress={() => { void createDelivery() }}
                 disabled={dispatching}
               >
                 {dispatching
-                  ? <ActivityIndicator color={Colors.navy900} size="small" />
-                  : <Text style={s.confirmText}>Dispatch</Text>}
+                  ? <ActivityIndicator color={colors.navy900} size="small" />
+                  : <Text style={styles.confirmText}>Dispatch</Text>}
               </TouchableOpacity>
             </View>
           </View>
@@ -239,40 +236,41 @@ export default function DispatchScreen() {
   )
 }
 
-const s = StyleSheet.create({
-  safe:          { flex: 1, backgroundColor: Colors.navy900 },
-  header:        { paddingHorizontal: 16, paddingTop: 16, paddingBottom: 8 },
-  title:         { fontSize: 20, fontWeight: '700', color: Colors.textPrimary },
-  subtitle:      { fontSize: 13, color: Colors.textSecondary, marginTop: 2 },
-  center:        { flex: 1, alignItems: 'center', justifyContent: 'center', padding: 32 },
-  empty:         { color: Colors.textSecondary, fontSize: 14, textAlign: 'center' },
-  list:          { paddingHorizontal: 16, paddingBottom: 24, gap: 12 },
-  card:          { backgroundColor: Colors.navy800, borderRadius: 12, padding: 16, gap: 10 },
-  cardTop:       { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start' },
-  cardLeft:      { gap: 2 },
-  orderId:       { fontSize: 13, fontWeight: '700', color: Colors.textPrimary, fontFamily: 'monospace' },
-  buyerName:     { fontSize: 12, color: Colors.textSecondary },
-  amount:        { fontSize: 14, fontWeight: '700', color: Colors.textPrimary, textAlign: 'right' },
-  statusBadge:   { fontSize: 10, fontWeight: '700', textAlign: 'right', marginTop: 2 },
-  parts:         { fontSize: 12, color: Colors.textSecondary, lineHeight: 18 },
-  deliveryBadge: { backgroundColor: Colors.navy700, borderRadius: 8, padding: 8 },
-  deliveryText:  { fontSize: 12, color: Colors.textSecondary },
-  dispatchBtn:   { backgroundColor: Colors.orange500, borderRadius: 8, paddingVertical: 10, alignItems: 'center' },
-  dispatchBtnText:{ color: Colors.navy900, fontWeight: '700', fontSize: 13 },
-  modalOverlay:  { flex: 1, backgroundColor: 'rgba(0,0,0,0.7)', justifyContent: 'flex-end' },
-  modalBox:      { backgroundColor: Colors.navy800, borderTopLeftRadius: 20, borderTopRightRadius: 20, padding: 24, gap: 12 },
-  modalTitle:    { fontSize: 17, fontWeight: '700', color: Colors.textPrimary },
-  modalSub:      { fontSize: 13, color: Colors.textSecondary },
-  input:         { backgroundColor: Colors.navy700, borderRadius: 10, paddingHorizontal: 14, paddingVertical: 12, fontSize: 14, color: Colors.textPrimary },
-  driverList:    { gap: 8, maxHeight: 200 },
-  driverRow:     { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', backgroundColor: Colors.navy700, borderRadius: 10, paddingHorizontal: 14, paddingVertical: 12 },
-  driverRowSelected: { backgroundColor: Colors.orange500 + '22', borderWidth: 1, borderColor: Colors.orange500 },
-  driverRowText: { fontSize: 14, color: Colors.textPrimary },
-  driverRowTextSelected: { color: Colors.orange500, fontWeight: '700' },
-  modalButtons:  { flexDirection: 'row', gap: 10, marginTop: 4 },
-  cancelBtn:     { flex: 1, backgroundColor: Colors.navy700, borderRadius: 10, paddingVertical: 13, alignItems: 'center' },
-  cancelText:    { color: Colors.textPrimary, fontWeight: '600' },
-  confirmBtn:    { flex: 1, backgroundColor: Colors.orange500, borderRadius: 10, paddingVertical: 13, alignItems: 'center' },
-  confirmText:   { color: Colors.navy900, fontWeight: '700' },
-  disabled:      { opacity: 0.5 },
-})
+function createStyles(c: ThemeColors) {
+  return StyleSheet.create({
+    safe:          { flex: 1, backgroundColor: c.navy900 },
+    header:        { paddingHorizontal: 16, paddingTop: 16, paddingBottom: 8 },
+    title:         { fontSize: 20, fontWeight: '700', color: c.textPrimary },
+    subtitle:      { fontSize: 13, color: c.textSecondary, marginTop: 2 },
+    center:        { flex: 1, alignItems: 'center', justifyContent: 'center', padding: 32 },
+    empty:         { color: c.textSecondary, fontSize: 14, textAlign: 'center' },
+    list:          { paddingHorizontal: 16, paddingBottom: 24, gap: 12 },
+    card:          { backgroundColor: c.navy800, borderRadius: 12, padding: 16, gap: 10 },
+    cardTop:       { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start' },
+    cardLeft:      { gap: 2 },
+    orderId:       { fontSize: 13, fontWeight: '700', color: c.textPrimary, fontFamily: 'monospace' },
+    buyerName:     { fontSize: 12, color: c.textSecondary },
+    amount:        { fontSize: 14, fontWeight: '700', color: c.textPrimary, textAlign: 'right' },
+    statusBadge:   { fontSize: 10, fontWeight: '700', textAlign: 'right', marginTop: 2 },
+    parts:         { fontSize: 12, color: c.textSecondary, lineHeight: 18 },
+    deliveryBadge: { backgroundColor: c.navy700, borderRadius: 8, padding: 8 },
+    deliveryText:  { fontSize: 12, color: c.textSecondary },
+    dispatchBtn:   { backgroundColor: c.orange500, borderRadius: 8, paddingVertical: 10, alignItems: 'center' },
+    dispatchBtnText:{ color: c.navy900, fontWeight: '700', fontSize: 13 },
+    modalOverlay:  { flex: 1, backgroundColor: 'rgba(0,0,0,0.7)', justifyContent: 'flex-end' },
+    modalBox:      { backgroundColor: c.navy800, borderTopLeftRadius: 20, borderTopRightRadius: 20, padding: 24, gap: 12 },
+    modalTitle:    { fontSize: 17, fontWeight: '700', color: c.textPrimary },
+    modalSub:      { fontSize: 13, color: c.textSecondary },
+    driverList:    { gap: 8, maxHeight: 200 },
+    driverRow:     { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', backgroundColor: c.navy700, borderRadius: 10, paddingHorizontal: 14, paddingVertical: 12 },
+    driverRowSelected: { backgroundColor: c.orange500 + '22', borderWidth: 1, borderColor: c.orange500 },
+    driverRowText: { fontSize: 14, color: c.textPrimary },
+    driverRowTextSelected: { color: c.orange500, fontWeight: '700' },
+    modalButtons:  { flexDirection: 'row', gap: 10, marginTop: 4 },
+    cancelBtn:     { flex: 1, backgroundColor: c.navy700, borderRadius: 10, paddingVertical: 13, alignItems: 'center' },
+    cancelText:    { color: c.textPrimary, fontWeight: '600' },
+    confirmBtn:    { flex: 1, backgroundColor: c.orange500, borderRadius: 10, paddingVertical: 13, alignItems: 'center' },
+    confirmText:   { color: c.navy900, fontWeight: '700' },
+    disabled:      { opacity: 0.5 },
+  })
+}

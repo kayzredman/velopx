@@ -67,7 +67,7 @@ export function PartDetailView({
           )}
 
           {part.dealer && (
-            <Card className="bg-navy-900">
+            <Card>
               <CardContent className="p-4">
                 <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">Sold by</p>
                 <p className="mt-1 font-semibold">{part.dealer.name ?? 'Verified dealer'}</p>

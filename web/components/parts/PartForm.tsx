@@ -139,14 +139,14 @@ export function PartForm({ part, onSuccess, onCancel }: PartFormProps) {
         onChange={(e) => setValues((v) => ({ ...v, description: e.target.value }))}
         placeholder="Description"
         rows={3}
-        className="flex w-full rounded-md border border-input bg-navy-900 px-3 py-2 text-sm"
+        className="flex w-full rounded-md border border-input bg-background px-3 py-2 text-sm shadow-sm dark:bg-card dark:shadow-none"
       />
       <select
         value={values.condition}
         onChange={(e) =>
           setValues((v) => ({ ...v, condition: e.target.value as PartFormValues['condition'] }))
         }
-        className="flex h-10 w-full rounded-md border border-input bg-navy-900 px-3 text-sm"
+        className="flex h-10 w-full rounded-md border border-input bg-background px-3 text-sm shadow-sm dark:bg-card dark:shadow-none"
         required
       >
         <option value="oem">OEM</option>
@@ -181,7 +181,7 @@ export function PartForm({ part, onSuccess, onCancel }: PartFormProps) {
           onChange={(e) =>
             setValues((v) => ({ ...v, stockStatus: e.target.value as PartFormValues['stockStatus'] }))
           }
-          className="flex h-10 w-full rounded-md border border-input bg-navy-900 px-3 text-sm"
+          className="flex h-10 w-full rounded-md border border-input bg-background px-3 text-sm shadow-sm dark:bg-card dark:shadow-none"
         >
           <option value="in_stock">In stock</option>
           <option value="limited">Limited</option>

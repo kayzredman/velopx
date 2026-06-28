@@ -1,17 +1,23 @@
 import type { Request, Response, NextFunction } from 'express'
 import { clerkClient } from '@clerk/express'
 import type { UserRole } from '@prisma/client'
-import { safeGetAuth } from '../lib/clerkConfig'
-import { expandRoles, hasAnyRole } from '../lib/roles'
 import { prisma } from '../db/prisma'
-
-function metadataFromAuth(auth: NonNullable<ReturnType<typeof safeGetAuth>>) {
-  return auth.sessionClaims?.metadata as Record<string, unknown> | undefined
-}
+import { safeGetAuth } from '../lib/clerkConfig'
+import { hasAnyRole } from '../lib/roles'
+import { resolveAllUserRoles } from '../lib/resolveUserRoles'
+import {
+  primaryRoleFromSessionClaims,
+  rolesFromSessionClaims,
+} from '../lib/sessionMetadata'
 
 function userRolesFromAuth(auth: NonNullable<ReturnType<typeof safeGetAuth>>): string[] {
-  const metadata = metadataFromAuth(auth)
-  return expandRoles(metadata?.role as string | undefined, metadata?.roles)
+  return rolesFromSessionClaims(auth.sessionClaims as Record<string, unknown> | undefined)
+}
+
+async function resolveUserRoles(auth: NonNullable<ReturnType<typeof safeGetAuth>>): Promise<string[]> {
+  const userId = auth.userId
+  if (!userId) return []
+  return resolveAllUserRoles(userId, auth.sessionClaims as Record<string, unknown> | undefined)
 }
 
 export function requireClerkAuth(req: Request, res: Response, next: NextFunction): void {
@@ -23,34 +29,38 @@ export function requireClerkAuth(req: Request, res: Response, next: NextFunction
   next()
 }
 
-// Role-based access control — reads role(s) from Clerk publicMetadata (synced to JWT)
+// Role-based access control — reads role(s) from Clerk publicMetadata (JWT or DB fallback)
 export function requireRole(...roles: string[]) {
-  return (req: Request, res: Response, next: NextFunction): void => {
-    const auth = safeGetAuth(req)
+  return async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+    try {
+      const auth = safeGetAuth(req)
 
-    if (!auth?.userId) {
-      res.status(401).json({ error: 'Unauthenticated' })
-      return
-    }
-
-    if (roles.length > 0) {
-      const userRoles = userRolesFromAuth(auth)
-      if (!hasAnyRole(userRoles, ...roles)) {
-        res.status(403).json({ error: 'Insufficient permissions' })
+      if (!auth?.userId) {
+        res.status(401).json({ error: 'Unauthenticated' })
         return
       }
-    }
 
-    next()
+      if (roles.length > 0) {
+        const userRoles = await resolveUserRoles(auth)
+        if (!hasAnyRole(userRoles, ...roles)) {
+          res.status(403).json({ error: 'Insufficient permissions' })
+          return
+        }
+      }
+
+      next()
+    } catch (err) {
+      next(err)
+    }
   }
 }
 
 // Helper — extract typed auth from request without throwing
 export function getRequestAuth(req: Request) {
   const auth = safeGetAuth(req)
-  const metadata = auth ? metadataFromAuth(auth) : undefined
+  const claims = auth?.sessionClaims as Record<string, unknown> | undefined
   const roles = auth ? userRolesFromAuth(auth) : []
-  const role = (metadata?.role as string | undefined) ?? roles[0]
+  const role = primaryRoleFromSessionClaims(claims)
 
   return {
     userId: auth?.userId,

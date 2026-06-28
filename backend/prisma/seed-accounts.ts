@@ -46,7 +46,7 @@ export const TEAM_USERS: SeedUser[] = [
     clerkId: 'team_rowland',
     email: 'rowland.kay.jones@gmail.com',
     name: 'Rowland Kay Jones',
-    role: 'insurer_admin',
+    role: 'assessor',
     roles: ['assessor', 'insurer_admin'],
   },
 ]

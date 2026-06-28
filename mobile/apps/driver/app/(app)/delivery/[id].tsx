@@ -1,5 +1,6 @@
 import * as ImagePicker from 'expo-image-picker'
-import { useCallback, useEffect, useState } from 'react'
+import * as Location from 'expo-location'
+import {useCallback, useEffect, useRef, useState, useMemo} from 'react'
 import {
   View,
   Text,
@@ -16,7 +17,7 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context'
 import MapView, { Marker, PROVIDER_DEFAULT } from 'react-native-maps'
 import { useLocalSearchParams, useRouter } from 'expo-router'
-import { Colors, useApi } from '@velopx/shared'
+import { useApi, useTheme, useThemedStyles, type ThemeColors} from '@velopx/shared'
 
 const MAP_HEIGHT = Dimensions.get('window').height * 0.35
 const GPS_INTERVAL_MS = 15_000
@@ -53,14 +54,18 @@ interface DeliveryDetail {
 const DEFAULT_LAT = 5.6037  // Accra, Ghana
 const DEFAULT_LNG = -0.187
 
-const STATUS_COLOR: Record<string, string> = {
-  assigned:   Colors.info,
-  collected:  Colors.warning,
+function deliveryStatusColors(colors: ThemeColors): Record<string, string> {
+  return {
+  assigned:   colors.info,
+  collected:  colors.warning,
   in_transit: '#8B5CF6',
-  delivered:  Colors.success,
-  confirmed:  Colors.success,
-  disputed:   Colors.error,
+  delivered:  colors.success,
+  confirmed:  colors.success,
+  disputed:   colors.error,
+  }
 }
+
+
 
 const STEPS = ['assigned', 'collected', 'in_transit', 'delivered', 'confirmed'] as const
 const STEP_LABELS = ['Assigned', 'Collected', 'In Transit', 'Delivered', 'Confirmed']
@@ -68,6 +73,9 @@ const STEP_LABELS = ['Assigned', 'Collected', 'In Transit', 'Delivered', 'Confir
 // ── Screen ──────────────────────────────────────────────────────────────────
 
 export default function DeliveryDetailScreen() {
+  const styles = useThemedStyles(createStyles)
+  const { colors } = useTheme()
+  const STATUS_COLOR = useMemo(() => deliveryStatusColors(colors), [colors])
   const { id }       = useLocalSearchParams<{ id: string }>()
   const { apiFetch } = useApi()
   const router       = useRouter()
@@ -97,24 +105,68 @@ export default function DeliveryDetailScreen() {
       .finally(() => setLoading(false))
   }, [id, apiFetch])
 
-  async function pickProofPhoto() {
-    const result = await ImagePicker.launchImageLibraryAsync({ mediaTypes: ['images'], quality: 0.8 })
-    if (!result.canceled && result.assets[0]?.uri) {
-      setProofUrl(result.assets[0].uri)
-    }
-  }
+  // Live GPS — poll position and push to API while delivery is active
+  useEffect(() => {
+    if (!delivery) return
+    const active = ['assigned', 'collected', 'in_transit'].includes(delivery.status)
+    if (!active) return
 
-  async function handleMarkDelivered() {
-    if (!proofUrl.trim()) {
-      Alert.alert('Proof Required', 'Capture or enter proof of delivery before marking as delivered.')
-      return
+    let cancelled = false
+
+    async function startGps() {
+      const { status } = await Location.requestForegroundPermissionsAsync()
+      if (status !== 'granted') {
+        if (!cancelled) setLocationDenied(true)
+        return
+      }
+      if (cancelled) return
+      setLocationDenied(false)
+      setGpsActive(true)
+
+      async function tick() {
+        if (cancelled) return
+        try {
+          const pos = await Location.getCurrentPositionAsync({ accuracy: Location.Accuracy.Balanced })
+          const { latitude, longitude } = pos.coords
+          setDriverPos({ latitude, longitude })
+          mapRef.current?.animateToRegion(
+            { latitude, longitude, latitudeDelta: 0.04, longitudeDelta: 0.04 },
+            500,
+          )
+          await apiFetch(`/v1/deliveries/${delivery!.id}/location`, {
+            method: 'PATCH',
+            body: JSON.stringify({ lat: latitude, lng: longitude }),
+          })
+        } catch {
+          // ignore transient GPS/API errors
+        }
+      }
+
+      await tick()
+      gpsInterval.current = setInterval(tick, GPS_INTERVAL_MS)
     }
+
+    startGps()
+
+    return () => {
+      cancelled = true
+      setGpsActive(false)
+      if (gpsInterval.current) {
+        clearInterval(gpsInterval.current)
+        gpsInterval.current = null
+      }
+    }
+  }, [delivery, apiFetch])
+
+  async function captureProof() {
     const result = await ImagePicker.launchCameraAsync({
       mediaTypes: ['images'],
       quality: 0.7,
       allowsEditing: true,
     })
-    if (!result.canceled) setProofImage(result.assets[0].uri)
+    if (!result.canceled && result.assets[0]?.uri) {
+      setProofImage(result.assets[0].uri)
+    }
   }
 
   async function confirmPickup() {
@@ -174,7 +226,7 @@ export default function DeliveryDetailScreen() {
   }
 
   const confirmDelivery = useCallback(async () => {
-    if (!proofImage) {
+    if (!delivery || !proofImage) {
       Alert.alert('Photo required', 'Please capture a proof photo before confirming delivery.')
       return
     }
@@ -202,7 +254,7 @@ export default function DeliveryDetailScreen() {
   if (loading || !delivery) {
     return (
       <SafeAreaView style={styles.safe}>
-        <ActivityIndicator color={Colors.orange500} style={{ flex: 1 }} />
+        <ActivityIndicator color={colors.orange500} style={{ flex: 1 }} />
       </SafeAreaView>
     )
   }
@@ -214,7 +266,7 @@ export default function DeliveryDetailScreen() {
     ? { latitude: delivery.source.lat, longitude: delivery.source.lng }
     : null
   const stepIdx     = STEPS.indexOf(delivery.status as typeof STEPS[number])
-  const statusColor = STATUS_COLOR[delivery.status] ?? Colors.textMuted
+  const statusColor = STATUS_COLOR[delivery.status] ?? colors.textMuted
   const orderRef    = delivery.order.claimReference ?? `#${delivery.order.id.slice(0, 8)}`
   const canCapture  = delivery.status === 'collected' || delivery.status === 'in_transit'
 
@@ -351,7 +403,7 @@ export default function DeliveryDetailScreen() {
             disabled={advancing}
           >
             {advancing
-              ? <ActivityIndicator color={Colors.navy950} />
+              ? <ActivityIndicator color={colors.navy950} />
               : <Text style={styles.ctaBtnText}>Mark as Collected</Text>
             }
           </TouchableOpacity>
@@ -364,7 +416,7 @@ export default function DeliveryDetailScreen() {
             disabled={advancing}
           >
             {advancing
-              ? <ActivityIndicator color={Colors.navy950} />
+              ? <ActivityIndicator color={colors.navy950} />
               : <Text style={styles.ctaBtnText}>Mark In Transit</Text>
             }
           </TouchableOpacity>
@@ -397,37 +449,17 @@ export default function DeliveryDetailScreen() {
         )}
       </ScrollView>
 
-          <View style={styles.section}>
-            <Text style={styles.sectionLabel}>Current Status</Text>
-            <Text style={styles.status}>{delivery.status.replace('_', ' ')}</Text>
-          </View>
-
-          {delivery.status === 'in_transit' && (
-            <View style={styles.section}>
-              <Text style={styles.sectionLabel}>Mark as Delivered</Text>
-              <TouchableOpacity style={styles.photoBtn} onPress={pickProofPhoto}>
-                <Text style={styles.photoBtnText}>📷 Pick Proof Photo</Text>
-              </TouchableOpacity>
-              <Text style={styles.fieldLabel}>Proof URL / URI *</Text>
-              <TextInput
-                style={styles.input}
-                value={proofUrl}
-                onChangeText={setProofUrl}
-                placeholder="https://your-photo-link.com/proof.jpg"
-                placeholderTextColor={Colors.textMuted}
-                autoCapitalize="none"
-                keyboardType="url"
-              />
-              <Text style={styles.fieldLabel}>Note (optional)</Text>
-              <TextInput
-                style={[styles.input, styles.textArea]}
-                value={note}
-                onChangeText={setNote}
-                placeholder="Any notes about the delivery…"
-                placeholderTextColor={Colors.textMuted}
-                multiline
-                numberOfLines={3}
-              />
+      {/* ── Exception modal ── */}
+      <Modal
+        visible={exceptionVisible}
+        animationType="slide"
+        transparent
+        onRequestClose={() => setExceptionVisible(false)}
+      >
+        <View style={styles.modalOverlay}>
+          <View style={styles.modalSheet}>
+            <View style={styles.modalHeader}>
+              <Text style={styles.modalTitle}>Report Exception</Text>
               <TouchableOpacity
                 onPress={() => setExceptionVisible(false)}
                 hitSlop={{ top: 12, right: 12, bottom: 12, left: 12 }}
@@ -457,7 +489,7 @@ export default function DeliveryDetailScreen() {
             <TextInput
               style={styles.noteInput}
               placeholder="Additional details (optional)"
-              placeholderTextColor={Colors.textMuted}
+              placeholderTextColor={colors.textMuted}
               value={exceptionNote}
               onChangeText={setExceptionNote}
               multiline
@@ -509,7 +541,7 @@ export default function DeliveryDetailScreen() {
             <TextInput
               style={styles.noteInput}
               placeholder="Note (optional) — e.g. Left with receptionist…"
-              placeholderTextColor={Colors.textMuted}
+              placeholderTextColor={colors.textMuted}
               value={proofNote}
               onChangeText={setProofNote}
               multiline
@@ -522,7 +554,7 @@ export default function DeliveryDetailScreen() {
               disabled={!proofImage || submitting}
             >
               {submitting
-                ? <ActivityIndicator color={Colors.navy950} />
+                ? <ActivityIndicator color={colors.navy950} />
                 : <Text style={styles.confirmBtnText}>Confirm Delivery</Text>
               }
             </TouchableOpacity>
@@ -533,8 +565,9 @@ export default function DeliveryDetailScreen() {
   )
 }
 
-const styles = StyleSheet.create({
-  safe: { flex: 1, backgroundColor: Colors.navy950 },
+function createStyles(c: ThemeColors) {
+  return StyleSheet.create({
+  safe: { flex: 1, backgroundColor: c.navy950 },
 
   // Header
   header: {
@@ -545,8 +578,8 @@ const styles = StyleSheet.create({
     gap: 10,
   },
   backBtn:     { padding: 4 },
-  backArrow:   { fontSize: 22, color: Colors.textPrimary },
-  headerTitle: { flex: 1, fontSize: 15, fontWeight: '600', color: Colors.textPrimary },
+  backArrow:   { fontSize: 22, color: c.textPrimary },
+  headerTitle: { flex: 1, fontSize: 15, fontWeight: '600', color: c.textPrimary },
   statusChip:  { borderWidth: 1, borderRadius: 8, paddingHorizontal: 8, paddingVertical: 3 },
   statusChipText: { fontSize: 11, fontWeight: '600', textTransform: 'capitalize' },
 
@@ -560,8 +593,8 @@ const styles = StyleSheet.create({
     paddingHorizontal: 7,
     paddingVertical: 3,
   },
-  gpsDot:       { width: 6, height: 6, borderRadius: 3, backgroundColor: Colors.success },
-  gpsActiveText:{ fontSize: 10, fontWeight: '700', color: Colors.success },
+  gpsDot:       { width: 6, height: 6, borderRadius: 3, backgroundColor: c.success },
+  gpsActiveText:{ fontSize: 10, fontWeight: '700', color: c.success },
 
   // Map
   mapContainer: { position: 'relative' },
@@ -571,25 +604,25 @@ const styles = StyleSheet.create({
     width: 16,
     height: 16,
     borderRadius: 8,
-    backgroundColor: Colors.info,
+    backgroundColor: c.info,
     borderWidth: 2,
-    borderColor: Colors.white,
+    borderColor: c.white,
   },
   destMarker: {
     width: 16,
     height: 16,
     borderRadius: 8,
-    backgroundColor: Colors.error,
+    backgroundColor: c.error,
     borderWidth: 2,
-    borderColor: Colors.white,
+    borderColor: c.white,
   },
   sourceMarker: {
     width: 16,
     height: 16,
     borderRadius: 8,
-    backgroundColor: Colors.success,
+    backgroundColor: c.success,
     borderWidth: 2,
-    borderColor: Colors.white,
+    borderColor: c.white,
   },
 
   locationDeniedBadge: {
@@ -601,61 +634,43 @@ const styles = StyleSheet.create({
     paddingHorizontal: 10,
     paddingVertical: 4,
   },
-  locationDeniedText: { fontSize: 11, fontWeight: '700', color: Colors.white },
+  locationDeniedText: { fontSize: 11, fontWeight: '700', color: c.white },
 
   // Panel
-  panel:        { flex: 1, backgroundColor: Colors.navy950 },
+  panel:        { flex: 1, backgroundColor: c.navy950 },
   panelContent: { padding: 20, paddingBottom: 48 },
 
   // Progress
   progressRow:        { flexDirection: 'row', gap: 4, marginBottom: 6 },
   progressSeg:        { flex: 1, height: 6, borderRadius: 3 },
-  progressSegDone:    { backgroundColor: Colors.success },
-  progressSegActive:  { backgroundColor: Colors.orange500 },
-  progressSegPending: { backgroundColor: Colors.navy700 },
-  progressLabel:      { fontSize: 12, color: Colors.textSecondary },
+  progressSegDone:    { backgroundColor: c.success },
+  progressSegActive:  { backgroundColor: c.orange500 },
+  progressSegPending: { backgroundColor: c.navy700 },
+  progressLabel:      { fontSize: 12, color: c.textSecondary },
 
   // Info card
   infoCard: {
-    backgroundColor: Colors.navy900,
+    backgroundColor: c.navy900,
     borderRadius: 14,
     padding: 16,
     gap: 8,
   },
-  sectionLabel: { fontSize: 11, fontWeight: '600', color: Colors.textSecondary, textTransform: 'uppercase', letterSpacing: 0.8 },
-  orderRef: { fontSize: 16, fontWeight: '700', color: Colors.textPrimary },
-  amount: { fontSize: 14, color: Colors.textSecondary },
-  itemRow: { flexDirection: 'row', alignItems: 'center', gap: 8 },
-  itemName: { fontSize: 14, color: Colors.textPrimary, flex: 1 },
-  itemOem: { fontSize: 11, color: Colors.textSecondary },
-  itemQty: { fontSize: 13, fontWeight: '600', color: Colors.orange500 },
-  status: { fontSize: 15, fontWeight: '600', color: Colors.textPrimary, textTransform: 'capitalize' },
-  fieldLabel: { fontSize: 12, color: Colors.textSecondary },
-  photoBtn: {
-    backgroundColor: Colors.navy800,
-    borderRadius: 10,
-    borderWidth: 1,
-    borderColor: Colors.navy700,
-    paddingVertical: 12,
-    alignItems: 'center',
-  },
-  photoBtnText: { color: Colors.orange500, fontWeight: '600' },
-  input: {
-    backgroundColor: Colors.navy800,
-    borderRadius: 10,
-    borderWidth: 1,
-    borderColor: Colors.navy700,
-  },
   sectionLabel: {
     fontSize: 10,
     fontWeight: '700',
-    color: Colors.textMuted,
+    color: c.textMuted,
     letterSpacing: 1,
     marginBottom: 4,
   },
-  infoValue: { fontSize: 14, color: Colors.textPrimary, fontWeight: '500' },
-  divider:   { height: 1, backgroundColor: Colors.navy700, marginVertical: 12 },
-  itemLine:  { fontSize: 13, color: Colors.textSecondary, marginBottom: 3 },
+  orderRef: { fontSize: 16, fontWeight: '700', color: c.textPrimary },
+  amount: { fontSize: 14, color: c.textSecondary },
+  itemRow: { flexDirection: 'row', alignItems: 'center', gap: 8 },
+  itemName: { fontSize: 14, color: c.textPrimary, flex: 1 },
+  itemOem: { fontSize: 11, color: c.textSecondary },
+  itemQty: { fontSize: 13, fontWeight: '600', color: c.orange500 },
+  infoValue: { fontSize: 14, color: c.textPrimary, fontWeight: '500' },
+  divider:   { height: 1, backgroundColor: c.navy700, marginVertical: 12 },
+  itemLine:  { fontSize: 13, color: c.textSecondary, marginBottom: 3 },
 
   totalRow: {
     flexDirection: 'row',
@@ -664,47 +679,47 @@ const styles = StyleSheet.create({
     marginTop: 12,
     paddingTop: 12,
     borderTopWidth: 1,
-    borderTopColor: Colors.navy700,
+    borderTopColor: c.navy700,
   },
-  totalAmt: { fontSize: 18, fontWeight: '700', color: Colors.textPrimary },
-  claimRef: { fontSize: 12, color: Colors.textSecondary },
+  totalAmt: { fontSize: 18, fontWeight: '700', color: c.textPrimary },
+  claimRef: { fontSize: 12, color: c.textSecondary },
 
   // Proof section
   proofSection: { marginTop: 20 },
   captureBtn: {
-    backgroundColor: Colors.navy800,
+    backgroundColor: c.navy800,
     borderWidth: 1,
-    borderColor: Colors.navy700,
+    borderColor: c.navy700,
     borderRadius: 12,
     paddingVertical: 14,
     alignItems: 'center',
     marginTop: 8,
   },
-  captureBtnText: { color: Colors.textPrimary, fontSize: 14, fontWeight: '600' },
+  captureBtnText: { color: c.textPrimary, fontSize: 14, fontWeight: '600' },
   proofThumbnail: {
     width: '100%',
     height: 160,
     borderRadius: 12,
     marginTop: 12,
-    backgroundColor: Colors.navy800,
+    backgroundColor: c.navy800,
   },
 
   // Action buttons
   ctaBtn: {
-    backgroundColor: Colors.orange500,
+    backgroundColor: c.orange500,
     borderRadius: 12,
     paddingVertical: 14,
     alignItems: 'center',
     marginTop: 20,
   },
-  ctaBtnText: { color: Colors.navy950, fontSize: 15, fontWeight: '700' },
+  ctaBtnText: { color: c.navy950, fontSize: 15, fontWeight: '700' },
   ctaBtnDelivered: {
-    backgroundColor: Colors.navy800,
+    backgroundColor: c.navy800,
     borderWidth: 1,
-    borderColor: Colors.success,
+    borderColor: c.success,
     opacity: 1,
   },
-  ctaBtnDeliveredText: { color: Colors.success, fontSize: 15, fontWeight: '600' },
+  ctaBtnDeliveredText: { color: c.success, fontSize: 15, fontWeight: '600' },
 
   // Modal
   modalOverlay: {
@@ -713,7 +728,7 @@ const styles = StyleSheet.create({
     justifyContent: 'flex-end',
   },
   modalSheet: {
-    backgroundColor: Colors.navy900,
+    backgroundColor: c.navy900,
     borderTopLeftRadius: 24,
     borderTopRightRadius: 24,
     padding: 24,
@@ -725,81 +740,82 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     alignItems: 'center',
   },
-  modalTitle: { fontSize: 17, fontWeight: '700', color: Colors.textPrimary },
-  modalClose: { fontSize: 18, color: Colors.textSecondary },
+  modalTitle: { fontSize: 17, fontWeight: '700', color: c.textPrimary },
+  modalClose: { fontSize: 18, color: c.textSecondary },
 
   proofPreview: {
     width: '100%',
     height: 180,
     borderRadius: 12,
-    backgroundColor: Colors.navy800,
+    backgroundColor: c.navy800,
   },
   proofPlaceholder: {
     width: '100%',
     height: 100,
     borderRadius: 12,
-    backgroundColor: Colors.navy800,
+    backgroundColor: c.navy800,
     borderWidth: 1,
-    borderColor: Colors.navy700,
+    borderColor: c.navy700,
     justifyContent: 'center',
     alignItems: 'center',
     gap: 8,
   },
   proofPlaceholderIcon: { fontSize: 28 },
-  proofPlaceholderText: { color: Colors.textMuted, fontSize: 13 },
+  proofPlaceholderText: { color: c.textMuted, fontSize: 13 },
 
   noteInput: {
-    backgroundColor: Colors.navy800,
+    backgroundColor: c.navy800,
     borderWidth: 1,
-    borderColor: Colors.navy700,
+    borderColor: c.navy700,
     borderRadius: 10,
-    color: Colors.textPrimary,
+    color: c.textPrimary,
     padding: 12,
     fontSize: 14,
     minHeight: 72,
     textAlignVertical: 'top',
   },
   confirmBtn: {
-    backgroundColor: Colors.orange500,
+    backgroundColor: c.orange500,
     borderRadius: 12,
     paddingVertical: 14,
     alignItems: 'center',
   },
-  confirmBtnText: { color: Colors.navy950, fontSize: 15, fontWeight: '700' },
+  confirmBtnText: { color: c.navy950, fontSize: 15, fontWeight: '700' },
   btnDisabled: { opacity: 0.5 },
 
   // Exception
   exceptionBtn: {
     marginTop: 12,
     borderWidth: 1,
-    borderColor: Colors.error,
+    borderColor: c.error,
     borderRadius: 12,
     paddingVertical: 12,
     alignItems: 'center',
   },
-  exceptionBtnText: { color: Colors.error, fontSize: 14, fontWeight: '600' },
-  exceptionLabel: { fontSize: 13, fontWeight: '600', color: Colors.textSecondary, textTransform: 'uppercase', letterSpacing: 0.5 },
+  exceptionBtnText: { color: c.error, fontSize: 14, fontWeight: '600' },
+  exceptionLabel: { fontSize: 13, fontWeight: '600', color: c.textSecondary, textTransform: 'uppercase', letterSpacing: 0.5 },
   exceptionOption: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 12,
-    backgroundColor: Colors.navy800,
+    backgroundColor: c.navy800,
     borderWidth: 1,
-    borderColor: Colors.navy700,
+    borderColor: c.navy700,
     borderRadius: 10,
     paddingVertical: 12,
     paddingHorizontal: 14,
   },
-  exceptionOptionActive: { borderColor: Colors.error, backgroundColor: 'rgba(239,68,68,0.08)' },
-  exceptionRadio: { width: 16, height: 16, borderRadius: 8, borderWidth: 2, borderColor: Colors.textMuted },
-  exceptionRadioActive: { borderColor: Colors.error, backgroundColor: Colors.error },
-  exceptionOptionText: { color: Colors.textSecondary, fontSize: 14 },
-  exceptionOptionTextActive: { color: Colors.textPrimary, fontWeight: '600' },
+  exceptionOptionActive: { borderColor: c.error, backgroundColor: 'rgba(239,68,68,0.08)' },
+  exceptionRadio: { width: 16, height: 16, borderRadius: 8, borderWidth: 2, borderColor: c.textMuted },
+  exceptionRadioActive: { borderColor: c.error, backgroundColor: c.error },
+  exceptionOptionText: { color: c.textSecondary, fontSize: 14 },
+  exceptionOptionTextActive: { color: c.textPrimary, fontWeight: '600' },
   exceptionConfirmBtn: {
-    backgroundColor: Colors.error,
+    backgroundColor: c.error,
     borderRadius: 12,
     paddingVertical: 14,
     alignItems: 'center',
   },
   exceptionConfirmBtnText: { color: '#fff', fontSize: 15, fontWeight: '700' },
 })
+}

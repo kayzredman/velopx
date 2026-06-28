@@ -17,29 +17,6 @@ export function expandUserRoles(role?: string | null, roles?: string[] | null): 
   return [...set]
 }
 
-export function getRoleHomePath(role?: string | null, roles?: string[] | null): string {
-  const all = expandUserRoles(role, roles)
-  if (all.some((r) => r === 'dealer_owner' || r === 'dealer_staff')) return '/dealer'
-  if (all.some((r) => r === 'garage_owner' || r === 'garage_staff')) return '/garage'
-  if (all.some((r) => r === 'insurer_admin' || r === 'insurer_staff')) return '/insight'
-  if (all.includes('assessor')) return '/assess'
-  switch (role) {
-    case 'dealer_owner':
-    case 'dealer_staff':
-      return '/dealer'
-    case 'garage_owner':
-    case 'garage_staff':
-      return '/garage'
-    case 'assessor':
-      return '/assess'
-    case 'insurer_admin':
-    case 'insurer_staff':
-      return '/insight'
-    default:
-      return '/dealer'
-  }
-}
-
 export function isAssessorRole(role?: string | null, roles?: string[] | null): boolean {
   return expandUserRoles(role, roles).some((r) =>
     ['assessor', 'insurer_admin', 'insurer_staff', 'platform_admin'].includes(r)

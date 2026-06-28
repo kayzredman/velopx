@@ -325,4 +325,36 @@ router.patch('/:id/respond', requireClerkAuth, async (req, res, next) => {
   }
 })
 
+// ── PATCH /v1/quotes/:id/dealer-decline — dealer declines a pending RFQ
+router.patch('/:id/dealer-decline', requireClerkAuth, async (req, res, next) => {
+  try {
+    const user = await requireRequestUser(req)
+
+    const quote = await prisma.quote.findUnique({
+      where: { id: req.params.id },
+      include: {
+        items: { include: { part: { select: { dealerId: true } } } },
+      },
+    })
+    if (!quote) throw createHttpError(404, 'Quote not found')
+    if (quote.status !== 'pending') {
+      throw createHttpError(400, 'Only pending quotes can be declined')
+    }
+
+    const isDealerOnQuote = quote.items.some((i) => i.part.dealerId === user.id)
+    if (!isDealerOnQuote && user.role !== 'platform_admin') {
+      throw createHttpError(403, 'Forbidden')
+    }
+
+    const updated = await prisma.quote.update({
+      where: { id: req.params.id },
+      data: { status: 'declined' },
+    })
+
+    res.json({ data: updated })
+  } catch (err) {
+    next(err)
+  }
+})
+
 export default router

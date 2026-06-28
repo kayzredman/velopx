@@ -15,7 +15,7 @@ export function MetricCard({
   className?: string
 }) {
   return (
-    <Card className={cn('bg-navy-900', className)}>
+    <Card className={cn(className)}>
       <CardContent className="p-5">
         <p className="text-[10px] font-semibold uppercase tracking-widest text-muted-foreground">{label}</p>
         <p className={cn('mt-3 font-display text-3xl font-bold', accent && 'text-primary')}>{value}</p>

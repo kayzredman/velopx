@@ -69,7 +69,7 @@ export function GarageDirectory() {
 
       <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
         {garages.map((g) => (
-          <Card key={g.id} className="bg-navy-900">
+          <Card key={g.id}>
             <CardContent className="p-4">
               <div className="flex items-start justify-between gap-2">
                 <p className="font-semibold">{g.name ?? 'Unnamed garage'}</p>

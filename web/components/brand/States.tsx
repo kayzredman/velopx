@@ -4,7 +4,7 @@ import { Card, CardContent } from '@/components/ui/card'
 
 export function EmptyState({ title, description }: { title: string; description?: string }) {
   return (
-    <Card className="border-dashed bg-navy-900/50">
+    <Card className="border-dashed bg-muted/30 dark:bg-muted/10">
       <CardContent className="flex flex-col items-center justify-center py-16 text-center">
         <Inbox className="mb-4 h-10 w-10 text-muted-foreground" />
         <h3 className="font-display text-lg font-semibold">{title}</h3>

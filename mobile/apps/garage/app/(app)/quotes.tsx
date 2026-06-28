@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import {useState, useMemo} from 'react'
 import {
   View,
   Text,
@@ -10,7 +10,7 @@ import {
   TextInput,
 } from 'react-native'
 import { SafeAreaView } from 'react-native-safe-area-context'
-import { Colors, useApi, useLoadMore } from '@velopx/shared'
+import { useApi, useLoadMore, useTheme, useThemedStyles, type ThemeColors} from '@velopx/shared'
 
 interface QuoteItem {
   id: string
@@ -28,15 +28,22 @@ interface Quote {
   items: QuoteItem[]
 }
 
-const STATUS_COLOR: Record<string, string> = {
-  pending:   Colors.warning,
-  responded: Colors.info,
-  accepted:  Colors.success,
-  declined:  Colors.error,
-  expired:   Colors.textMuted,
+function quoteStatusColors(colors: ThemeColors): Record<string, string> {
+  return {
+  pending:   colors.warning,
+  responded: colors.info,
+  accepted:  colors.success,
+  declined:  colors.error,
+  expired:   colors.textMuted,
+  }
 }
 
+
+
 export default function QuotesScreen() {
+  const styles = useThemedStyles(createStyles)
+  const { colors } = useTheme()
+  const STATUS_COLOR = useMemo(() => quoteStatusColors(colors), [colors])
   const { apiFetch } = useApi()
   const { items: quotes, loading, loadingMore, refreshing, hasMore, total,
           query, setQuery, onRefresh, onLoadMore, updateItem } = useLoadMore<Quote>({
@@ -64,7 +71,7 @@ export default function QuotesScreen() {
   if (loading) {
     return (
       <SafeAreaView style={styles.safe}>
-        <ActivityIndicator color={Colors.orange500} style={{ flex: 1 }} />
+        <ActivityIndicator color={colors.orange500} style={{ flex: 1 }} />
       </SafeAreaView>
     )
   }
@@ -82,7 +89,7 @@ export default function QuotesScreen() {
           value={query}
           onChangeText={setQuery}
           placeholder="Search by claim reference…"
-          placeholderTextColor={Colors.textSecondary}
+          placeholderTextColor={colors.textSecondary}
           returnKeyType="search"
           clearButtonMode="while-editing"
         />
@@ -92,7 +99,7 @@ export default function QuotesScreen() {
         data={quotes}
         keyExtractor={(q) => q.id}
         contentContainerStyle={styles.list}
-        refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={Colors.orange500} />}
+        refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={colors.orange500} />}
         onEndReached={onLoadMore}
         onEndReachedThreshold={0.3}
         ListEmptyComponent={
@@ -103,7 +110,7 @@ export default function QuotesScreen() {
         }
         ListFooterComponent={
           loadingMore ? (
-            <ActivityIndicator color={Colors.orange500} style={{ paddingVertical: 16 }} />
+            <ActivityIndicator color={colors.orange500} style={{ paddingVertical: 16 }} />
           ) : hasMore ? (
             <TouchableOpacity onPress={onLoadMore} style={styles.loadMoreBtn}>
               <Text style={styles.loadMoreText}>Load More</Text>
@@ -146,14 +153,14 @@ export default function QuotesScreen() {
                   onPress={() => handleStatusChange(item.id, 'declined')}
                   disabled={updatingId === item.id}
                 >
-                  <Text style={[styles.actionBtnText, { color: Colors.error }]}>Decline</Text>
+                  <Text style={[styles.actionBtnText, { color: colors.error }]}>Decline</Text>
                 </TouchableOpacity>
                 <TouchableOpacity
                   style={[styles.actionBtn, styles.acceptBtn, updatingId === item.id && styles.btnDisabled]}
                   onPress={() => handleStatusChange(item.id, 'accepted')}
                   disabled={updatingId === item.id}
                 >
-                  <Text style={[styles.actionBtnText, { color: Colors.navy950 }]}>
+                  <Text style={[styles.actionBtnText, { color: colors.navy950 }]}>
                     {updatingId === item.id ? 'Updating…' : 'Accept'}
                   </Text>
                 </TouchableOpacity>
@@ -166,39 +173,41 @@ export default function QuotesScreen() {
   )
 }
 
-const styles = StyleSheet.create({
-  safe: { flex: 1, backgroundColor: Colors.navy950 },
+function createStyles(c: ThemeColors) {
+  return StyleSheet.create({
+  safe: { flex: 1, backgroundColor: c.navy950 },
   header: { paddingHorizontal: 20, paddingTop: 20, paddingBottom: 12 },
-  title: { fontSize: 22, fontWeight: '700', color: Colors.textPrimary },
-  count: { fontSize: 13, color: Colors.textSecondary, marginTop: 2 },
+  title: { fontSize: 22, fontWeight: '700', color: c.textPrimary },
+  count: { fontSize: 13, color: c.textSecondary, marginTop: 2 },
   list: { padding: 20, gap: 12 },
   card: {
-    backgroundColor: Colors.navy900,
+    backgroundColor: c.navy900,
     borderRadius: 14,
     borderWidth: 1,
-    borderColor: Colors.navy700,
+    borderColor: c.navy700,
     padding: 16,
     gap: 10,
   },
   cardTop: { flexDirection: 'row', alignItems: 'flex-start' },
-  date: { fontSize: 12, color: Colors.textSecondary },
-  claimRef: { fontSize: 11, color: Colors.textMuted, marginTop: 2 },
+  date: { fontSize: 12, color: c.textSecondary },
+  claimRef: { fontSize: 11, color: c.textMuted, marginTop: 2 },
   statusBadge: { borderWidth: 1, borderRadius: 8, paddingHorizontal: 8, paddingVertical: 3 },
   statusText: { fontSize: 11, fontWeight: '600', textTransform: 'capitalize' },
   itemRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
-  itemName: { fontSize: 13, color: Colors.textPrimary, flex: 1 },
-  itemPrice: { fontSize: 13, fontWeight: '600', color: Colors.orange500 },
+  itemName: { fontSize: 13, color: c.textPrimary, flex: 1 },
+  itemPrice: { fontSize: 13, fontWeight: '600', color: c.orange500 },
   actionRow: { flexDirection: 'row', gap: 10, marginTop: 4 },
   actionBtn: { flex: 1, paddingVertical: 10, borderRadius: 10, alignItems: 'center' },
-  acceptBtn: { backgroundColor: Colors.orange500 },
-  declineBtn: { backgroundColor: Colors.navy700 },
+  acceptBtn: { backgroundColor: c.orange500 },
+  declineBtn: { backgroundColor: c.navy700 },
   btnDisabled: { opacity: 0.5 },
   actionBtnText: { fontWeight: '600', fontSize: 13 },
   emptyBox: { alignItems: 'center', paddingTop: 60 },
-  emptyText: { color: Colors.textSecondary, fontSize: 14 },
-  emptySubtext: { color: Colors.textMuted, fontSize: 12, marginTop: 6 },
+  emptyText: { color: c.textSecondary, fontSize: 14 },
+  emptySubtext: { color: c.textMuted, fontSize: 12, marginTop: 6 },
   searchRow: { paddingHorizontal: 20, paddingBottom: 12 },
-  searchInput: { backgroundColor: Colors.navy900, borderWidth: 1, borderColor: Colors.navy700, borderRadius: 10, paddingHorizontal: 14, paddingVertical: 9, fontSize: 14, color: Colors.textPrimary },
+  searchInput: { backgroundColor: c.navy900, borderWidth: 1, borderColor: c.navy700, borderRadius: 10, paddingHorizontal: 14, paddingVertical: 9, fontSize: 14, color: c.textPrimary },
   loadMoreBtn: { alignItems: 'center', paddingVertical: 16 },
-  loadMoreText: { fontSize: 14, color: Colors.orange500, fontWeight: '600' },
+  loadMoreText: { fontSize: 14, color: c.orange500, fontWeight: '600' },
 })
+}

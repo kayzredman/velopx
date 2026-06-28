@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from 'react'
+import {useCallback, useEffect, useState, useMemo} from 'react'
 import {
   View,
   Text,
@@ -11,7 +11,7 @@ import {
 } from 'react-native'
 import { SafeAreaView } from 'react-native-safe-area-context'
 import { useAuth, useUser } from '@clerk/clerk-expo'
-import { Colors, Input, Button, useApi } from '@velopx/shared'
+import { Input, Button, ThemeToggle, useApi, useTheme, useThemedStyles, type ThemeColors} from '@velopx/shared'
 
 // expo-location is a native module — GPS only works after expo prebuild + rebuild.
 // The address text field works immediately without a rebuild.
@@ -34,6 +34,8 @@ interface UserProfile {
 }
 
 export default function GarageProfileScreen() {
+  const styles = useThemedStyles(createStyles)
+  const { colors } = useTheme()
   const { signOut } = useAuth()
   const { user } = useUser()
   const { apiFetch } = useApi()
@@ -142,7 +144,7 @@ export default function GarageProfileScreen() {
   if (loading) {
     return (
       <SafeAreaView style={styles.safe}>
-        <ActivityIndicator color={Colors.orange500} style={{ marginTop: 40 }} />
+        <ActivityIndicator color={colors.orange500} style={{ marginTop: 40 }} />
       </SafeAreaView>
     )
   }
@@ -153,6 +155,11 @@ export default function GarageProfileScreen() {
         {/* Header */}
         <Text style={styles.heading}>My Profile</Text>
         <Text style={styles.sub}>{user?.primaryEmailAddress?.emailAddress}</Text>
+
+        <View style={styles.themeSection}>
+          <Text style={styles.themeLabel}>Appearance</Text>
+          <ThemeToggle />
+        </View>
 
         {/* Personal info */}
         <View style={styles.card}>
@@ -207,7 +214,7 @@ export default function GarageProfileScreen() {
             disabled={gpsLoading}
           >
             {gpsLoading ? (
-              <ActivityIndicator color={Colors.orange500} size="small" />
+              <ActivityIndicator color={colors.orange500} size="small" />
             ) : (
               <Text style={styles.gpsBtnText}>📍 Use Current GPS Location</Text>
             )}
@@ -226,7 +233,7 @@ export default function GarageProfileScreen() {
         {error   && <Text style={styles.errText}>{error}</Text>}
         {success && <Text style={styles.successText}>Profile saved ✓</Text>}
 
-        <Button title={saving ? 'Saving…' : 'Save Changes'} onPress={save} disabled={saving} />
+        <Button label={saving ? 'Saving…' : 'Save Changes'} onPress={save} disabled={saving} loading={saving} />
 
         {/* Sign out */}
         <TouchableOpacity style={styles.signOutBtn} onPress={() => signOut()}>
@@ -237,25 +244,29 @@ export default function GarageProfileScreen() {
   )
 }
 
-const styles = StyleSheet.create({
-  safe:         { flex: 1, backgroundColor: Colors.navy900 },
+function createStyles(c: ThemeColors) {
+  return StyleSheet.create({
+  safe:         { flex: 1, backgroundColor: c.navy900 },
   content:      { padding: 20, paddingBottom: 60 },
-  heading:      { fontSize: 24, fontWeight: '700', color: Colors.textPrimary, marginBottom: 4 },
-  sub:          { fontSize: 13, color: Colors.textSecondary, marginBottom: 20 },
-  card:         { backgroundColor: Colors.navy800, borderRadius: 12, padding: 16, marginBottom: 16 },
-  cardTitle:    { fontSize: 14, fontWeight: '600', color: Colors.orange500, marginBottom: 12, textTransform: 'uppercase', letterSpacing: 0.5 },
-  hint:         { fontSize: 12, color: Colors.textMuted, marginBottom: 12, lineHeight: 18 },
+  heading:      { fontSize: 24, fontWeight: '700', color: c.textPrimary, marginBottom: 4 },
+  sub:          { fontSize: 13, color: c.textSecondary, marginBottom: 20 },
+  themeSection: { marginBottom: 20, gap: 10 },
+  themeLabel:   { fontSize: 13, fontWeight: '600', color: c.textSecondary },
+  card:         { backgroundColor: c.navy800, borderRadius: 12, padding: 16, marginBottom: 16 },
+  cardTitle:    { fontSize: 14, fontWeight: '600', color: c.orange500, marginBottom: 12, textTransform: 'uppercase', letterSpacing: 0.5 },
+  hint:         { fontSize: 12, color: c.textMuted, marginBottom: 12, lineHeight: 18 },
   row:          { flexDirection: 'row', gap: 12 },
   half:         { flex: 1 },
-  gpsBtn:       { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', borderWidth: 1, borderColor: Colors.orange500, borderRadius: 8, paddingVertical: 10, marginTop: 4 },
+  gpsBtn:       { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', borderWidth: 1, borderColor: c.orange500, borderRadius: 8, paddingVertical: 10, marginTop: 4 },
   btnDisabled:  { opacity: 0.5 },
-  gpsBtnText:   { fontSize: 14, color: Colors.orange500, fontWeight: '600' },
-  savedLocation:{ marginTop: 10, backgroundColor: Colors.navy700, borderRadius: 8, padding: 10 },
-  savedLabel:   { fontSize: 11, color: Colors.textMuted, marginBottom: 2 },
-  savedValue:   { fontSize: 13, color: Colors.textPrimary },
-  errText:      { color: Colors.error, fontSize: 13, marginBottom: 8, textAlign: 'center' },
-  successText:  { color: Colors.success, fontSize: 13, marginBottom: 8, textAlign: 'center' },
+  gpsBtnText:   { fontSize: 14, color: c.orange500, fontWeight: '600' },
+  savedLocation:{ marginTop: 10, backgroundColor: c.navy700, borderRadius: 8, padding: 10 },
+  savedLabel:   { fontSize: 11, color: c.textMuted, marginBottom: 2 },
+  savedValue:   { fontSize: 13, color: c.textPrimary },
+  errText:      { color: c.error, fontSize: 13, marginBottom: 8, textAlign: 'center' },
+  successText:  { color: c.success, fontSize: 13, marginBottom: 8, textAlign: 'center' },
   signOutBtn:   { marginTop: 24, alignItems: 'center', paddingVertical: 12 },
-  signOutText:  { color: Colors.error, fontSize: 15, fontWeight: '600' },
+  signOutText:  { color: c.error, fontSize: 15, fontWeight: '600' },
   ...Platform.select({ ios: {}, android: {} }),
 })
+}

@@ -31,6 +31,7 @@
     "db:generate": "pnpm --filter backend db:generate",
     "db:migrate": "pnpm --filter backend db:migrate",
     "db:seed": "pnpm --filter backend db:seed",
+    "db:sync": "bash scripts/db-sync.sh",
     "db:link-me": "pnpm --filter backend db:link-me",
     "db:reset-seed": "pnpm --filter backend db:reset-seed",
     "build": "pnpm --filter backend build && pnpm --filter web build"

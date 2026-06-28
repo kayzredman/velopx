@@ -6,7 +6,37 @@
 
 @layer base {
   :root {
-    --background: 214 44% 4%;
+    --background: 220 20% 88%;
+    --foreground: 222 47% 11%;
+    --card: 0 0% 100%;
+    --card-foreground: 222 47% 11%;
+    --popover: 0 0% 100%;
+    --popover-foreground: 222 47% 11%;
+    --primary: 38 91% 48%;
+    --primary-foreground: 222 47% 11%;
+    --secondary: 220 22% 93%;
+    --secondary-foreground: 222 47% 11%;
+    --muted: 220 18% 92%;
+    --muted-foreground: 220 9% 42%;
+    --accent: 220 16% 90%;
+    --accent-foreground: 222 47% 11%;
+    --destructive: 0 72% 51%;
+    --destructive-foreground: 0 0% 98%;
+    --border: 220 14% 84%;
+    --input: 220 14% 84%;
+    --ring: 38 91% 48%;
+    --radius: 0.75rem;
+    --shadow-color: 220 40% 20%;
+    /* Branded navy sidebar (both themes) */
+    --sidebar: 214 44% 11%;
+    --sidebar-foreground: 214 20% 94%;
+    --sidebar-muted: 214 14% 62%;
+    --sidebar-border: 214 32% 18%;
+    --sidebar-accent: 214 32% 16%;
+  }
+
+  .dark {
+    --background: 214 48% 2%;
     --foreground: 214 20% 93%;
     --card: 214 44% 7%;
     --card-foreground: 214 20% 93%;
@@ -16,16 +46,21 @@
     --primary-foreground: 0 0% 0%;
     --secondary: 214 32% 14%;
     --secondary-foreground: 214 20% 93%;
-    --muted: 214 32% 14%;
+    --muted: 214 32% 12%;
     --muted-foreground: 214 12% 60%;
-    --accent: 214 32% 18%;
+    --accent: 214 32% 16%;
     --accent-foreground: 214 20% 93%;
     --destructive: 0 84% 60%;
     --destructive-foreground: 0 0% 98%;
-    --border: 214 32% 20%;
-    --input: 214 32% 20%;
+    --border: 214 32% 18%;
+    --input: 214 32% 18%;
     --ring: 38 91% 55%;
-    --radius: 0.625rem;
+    --shadow-color: 214 50% 3%;
+    --sidebar: 214 44% 6%;
+    --sidebar-foreground: 214 20% 94%;
+    --sidebar-muted: 214 12% 58%;
+    --sidebar-border: 214 32% 14%;
+    --sidebar-accent: 214 32% 12%;
   }
 
   * {
@@ -39,5 +74,37 @@
 
   h1, h2, h3, h4, h5, h6 {
     font-family: var(--font-space-grotesk), system-ui, sans-serif;
+  }
+}
+
+@layer components {
+  .surface-card {
+    @apply rounded-xl border border-border bg-card text-card-foreground shadow-sm dark:shadow-none;
+  }
+
+  .surface-inset {
+    @apply rounded-lg border border-border bg-muted/40 dark:bg-muted/20;
+  }
+
+  .portal-sidebar {
+    @apply relative border-sidebar-border bg-sidebar text-sidebar-foreground;
+    background-image: linear-gradient(
+      180deg,
+      hsl(var(--sidebar)) 0%,
+      hsl(214 44% 9%) 100%
+    );
+  }
+
+  .dark .portal-sidebar {
+    background-image: linear-gradient(
+      180deg,
+      hsl(var(--sidebar)) 0%,
+      hsl(214 48% 4%) 100%
+    );
+  }
+
+  .portal-sidebar::before {
+    content: '';
+    @apply absolute bottom-0 left-0 top-0 w-[3px] bg-primary;
   }
 }

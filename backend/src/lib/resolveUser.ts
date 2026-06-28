@@ -47,13 +47,7 @@ export async function resolveRequestUser(req: Request): Promise<User | null> {
   if (!auth.userId) return null
 
   const byClerk = await prisma.user.findUnique({ where: { clerkId: auth.userId } })
-  if (byClerk) {
-    const clerkRole = parseRole(auth.role)
-    if (clerkRole !== byClerk.role && clerkRole !== 'driver') {
-      return prisma.user.update({ where: { id: byClerk.id }, data: { role: clerkRole } })
-    }
-    return byClerk
-  }
+  if (byClerk) return byClerk
 
   let clerkUser: Awaited<ReturnType<typeof clerkClient.users.getUser>>
   try {
@@ -66,7 +60,7 @@ export async function resolveRequestUser(req: Request): Promise<User | null> {
   const email = clerkEmail(clerkUser)
   if (!email) return null
 
-  const role = parseRole(auth.role ?? clerkUser.publicMetadata?.role)
+  const role = parseRole(clerkUser.publicMetadata?.role ?? auth.role)
   const name = [clerkUser.firstName, clerkUser.lastName].filter(Boolean).join(' ') || null
 
   // Link seeded / legacy rows that share the email but a different clerkId

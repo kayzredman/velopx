@@ -5,11 +5,15 @@ const nextConfig: NextConfig = {
   outputFileTracingRoot: path.join(__dirname, '../'),
   images: {
     remotePatterns: [
-      { hostname: 'img.clerk.com' },
-      { hostname: 'images.clerk.dev' },
-      { hostname: 'images.unsplash.com' },
-      { hostname: 'picsum.photos' },
+      { protocol: 'https', hostname: 'img.clerk.com', pathname: '/**' },
+      { protocol: 'https', hostname: 'images.clerk.dev', pathname: '/**' },
+      { protocol: 'https', hostname: 'images.unsplash.com', pathname: '/**' },
+      { protocol: 'https', hostname: 'picsum.photos', pathname: '/**' },
     ],
+  },
+  webpack: (config) => {
+    config.cache = false
+    return config
   },
 }
 

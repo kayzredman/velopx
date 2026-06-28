@@ -6,6 +6,7 @@ import { prisma } from '../../db/prisma'
 import { createHttpError } from '../../middleware/errorHandler'
 import { publishEvent } from '../../kafka/events'
 import { canAccessDelivery } from '../../lib/deliveryAccess'
+import { shapeDelivery } from '../../lib/shapeDelivery'
 
 const router = Router()
 
@@ -135,7 +136,7 @@ router.get('/:id', requireClerkAuth, async (req, res, next) => {
       throw createHttpError(403, 'Forbidden')
     }
 
-    res.json({ data: delivery })
+    res.json({ data: shapeDelivery(delivery) })
   } catch (err) {
     next(err)
   }

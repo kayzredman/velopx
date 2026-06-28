@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from 'react'
+import {useCallback, useEffect, useState, useMemo} from 'react'
 import {
   View,
   Text,
@@ -11,7 +11,7 @@ import {
   TextInput,
 } from 'react-native'
 import { SafeAreaView } from 'react-native-safe-area-context'
-import { Colors, useApi, Input } from '@velopx/shared'
+import { useApi, Input, useTheme, useThemedStyles, type ThemeColors} from '@velopx/shared'
 
 // expo-location: GPS works only after expo prebuild + rebuild. Degrades gracefully.
 let Location: typeof import('expo-location') | null = null
@@ -47,27 +47,39 @@ interface LocationEditState {
   gpsLoading: boolean
 }
 
-const STATUS_COLOR: Record<string, string> = {
-  pending:    Colors.warning,
-  confirmed:  Colors.info,
+function orderStatusColors(colors: ThemeColors): Record<string, string> {
+  return {
+  pending:    colors.warning,
+  confirmed:  colors.info,
   dispatched: '#8B5CF6',
-  delivered:  Colors.success,
-  completed:  Colors.success,
-  cancelled:  Colors.error,
-  disputed:   Colors.error,
+  delivered:  colors.success,
+  completed:  colors.success,
+  cancelled:  colors.error,
+  disputed:   colors.error,
+  }
 }
 
-const DELIVERY_STATUS_COLOR: Record<string, string> = {
-  pending:    Colors.textMuted,
-  assigned:   Colors.info,
-  collected:  Colors.warning,
+
+
+function deliveryStatusColors(colors: ThemeColors): Record<string, string> {
+  return {
+  pending:    colors.textMuted,
+  assigned:   colors.info,
+  collected:  colors.warning,
   in_transit: '#8B5CF6',
-  delivered:  Colors.success,
-  confirmed:  Colors.success,
-  disputed:   Colors.error,
+  delivered:  colors.success,
+  confirmed:  colors.success,
+  disputed:   colors.error,
+  }
 }
+
+
 
 export default function GarageOrdersScreen() {
+  const styles = useThemedStyles(createStyles)
+  const { colors } = useTheme()
+  const STATUS_COLOR = useMemo(() => orderStatusColors(colors), [colors])
+  const DELIVERY_STATUS_COLOR = useMemo(() => deliveryStatusColors(colors), [colors])
   const { apiFetch } = useApi()
   const [orders, setOrders]     = useState<Order[]>([])
   const [loading, setLoading]   = useState(true)
@@ -219,7 +231,7 @@ export default function GarageOrdersScreen() {
   if (loading) {
     return (
       <SafeAreaView style={styles.safe}>
-        <ActivityIndicator color={Colors.orange500} style={{ flex: 1 }} />
+        <ActivityIndicator color={colors.orange500} style={{ flex: 1 }} />
       </SafeAreaView>
     )
   }
@@ -237,7 +249,7 @@ export default function GarageOrdersScreen() {
           value={query}
           onChangeText={setQuery}
           placeholder="Search by claim reference…"
-          placeholderTextColor={Colors.textSecondary}
+          placeholderTextColor={colors.textSecondary}
           returnKeyType="search"
           clearButtonMode="while-editing"
         />
@@ -247,7 +259,7 @@ export default function GarageOrdersScreen() {
         data={orders}
         keyExtractor={(o) => o.id}
         contentContainerStyle={styles.list}
-        refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={Colors.orange500} />}
+        refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={colors.orange500} />}
         onEndReached={onLoadMore}
         onEndReachedThreshold={0.3}
         ListEmptyComponent={
@@ -257,7 +269,7 @@ export default function GarageOrdersScreen() {
         }
         ListFooterComponent={
           loadingMore ? (
-            <ActivityIndicator color={Colors.orange500} style={{ paddingVertical: 16 }} />
+            <ActivityIndicator color={colors.orange500} style={{ paddingVertical: 16 }} />
           ) : hasMore ? (
             <TouchableOpacity onPress={onLoadMore} style={styles.loadMoreBtn}>
               <Text style={styles.loadMoreText}>Load More</Text>
@@ -280,8 +292,8 @@ export default function GarageOrdersScreen() {
                   })}
                 </Text>
               </View>
-              <View style={[styles.statusBadge, { borderColor: STATUS_COLOR[item.status] ?? Colors.navy700 }]}>
-                <Text style={[styles.statusText, { color: STATUS_COLOR[item.status] ?? Colors.textSecondary }]}>
+              <View style={[styles.statusBadge, { borderColor: STATUS_COLOR[item.status] ?? colors.navy700 }]}>
+                <Text style={[styles.statusText, { color: STATUS_COLOR[item.status] ?? colors.textSecondary }]}>
                   {item.status}
                 </Text>
               </View>
@@ -347,7 +359,7 @@ export default function GarageOrdersScreen() {
                         disabled={locEdit[item.id].gpsLoading}
                       >
                         {locEdit[item.id].gpsLoading
-                          ? <ActivityIndicator color={Colors.orange500} size="small" />
+                          ? <ActivityIndicator color={colors.orange500} size="small" />
                           : <Text style={styles.locGpsBtnText}>📍 GPS</Text>}
                       </TouchableOpacity>
                       <TouchableOpacity
@@ -371,7 +383,7 @@ export default function GarageOrdersScreen() {
                   <Text style={styles.deliveryLabel}>Delivery</Text>
                   <Text style={[
                     styles.deliveryStatus,
-                    { color: DELIVERY_STATUS_COLOR[item.delivery.status] ?? Colors.textSecondary },
+                    { color: DELIVERY_STATUS_COLOR[item.delivery.status] ?? colors.textSecondary },
                   ]}>
                     {item.delivery.status.replace('_', ' ')}
                   </Text>
@@ -384,14 +396,14 @@ export default function GarageOrdersScreen() {
                       onPress={() => disputeDelivery(item.delivery!.id)}
                       disabled={updatingId === item.delivery!.id}
                     >
-                      <Text style={[styles.actionBtnText, { color: Colors.error }]}>Dispute</Text>
+                      <Text style={[styles.actionBtnText, { color: colors.error }]}>Dispute</Text>
                     </TouchableOpacity>
                     <TouchableOpacity
                       style={[styles.actionBtn, styles.confirmBtn, updatingId === item.delivery.id && styles.btnDisabled]}
                       onPress={() => confirmDelivery(item.delivery!.id)}
                       disabled={updatingId === item.delivery!.id}
                     >
-                      <Text style={[styles.actionBtnText, { color: Colors.navy950 }]}>
+                      <Text style={[styles.actionBtnText, { color: colors.navy950 }]}>
                         {updatingId === item.delivery.id ? 'Updating…' : 'Confirm Receipt'}
                       </Text>
                     </TouchableOpacity>
@@ -406,56 +418,58 @@ export default function GarageOrdersScreen() {
   )
 }
 
-const styles = StyleSheet.create({
-  safe: { flex: 1, backgroundColor: Colors.navy950 },
+function createStyles(c: ThemeColors) {
+  return StyleSheet.create({
+  safe: { flex: 1, backgroundColor: c.navy950 },
   header: { paddingHorizontal: 20, paddingTop: 20, paddingBottom: 12 },
-  title: { fontSize: 22, fontWeight: '700', color: Colors.textPrimary },
-  count: { fontSize: 13, color: Colors.textSecondary, marginTop: 2 },
+  title: { fontSize: 22, fontWeight: '700', color: c.textPrimary },
+  count: { fontSize: 13, color: c.textSecondary, marginTop: 2 },
   list: { padding: 20, gap: 12 },
   card: {
-    backgroundColor: Colors.navy900,
+    backgroundColor: c.navy900,
     borderRadius: 14,
     borderWidth: 1,
-    borderColor: Colors.navy700,
+    borderColor: c.navy700,
     padding: 16,
     gap: 10,
   },
   cardTop: { flexDirection: 'row', alignItems: 'flex-start' },
-  amount: { fontSize: 17, fontWeight: '700', color: Colors.textPrimary },
-  claimRef: { fontSize: 11, color: Colors.textSecondary, marginTop: 2 },
-  date: { fontSize: 12, color: Colors.textSecondary, marginTop: 3 },
+  amount: { fontSize: 17, fontWeight: '700', color: c.textPrimary },
+  claimRef: { fontSize: 11, color: c.textSecondary, marginTop: 2 },
+  date: { fontSize: 12, color: c.textSecondary, marginTop: 3 },
   statusBadge: { borderWidth: 1, borderRadius: 8, paddingHorizontal: 8, paddingVertical: 3 },
   statusText: { fontSize: 11, fontWeight: '600', textTransform: 'capitalize' },
-  itemList: { fontSize: 12, color: Colors.textSecondary },
-  deliverySection: { gap: 10, paddingTop: 4, borderTopWidth: 1, borderTopColor: Colors.navy700 },
+  itemList: { fontSize: 12, color: c.textSecondary },
+  deliverySection: { gap: 10, paddingTop: 4, borderTopWidth: 1, borderTopColor: c.navy700 },
   deliveryRow: { flexDirection: 'row', justifyContent: 'space-between' },
-  deliveryLabel: { fontSize: 12, color: Colors.textSecondary },
+  deliveryLabel: { fontSize: 12, color: c.textSecondary },
   deliveryStatus: { fontSize: 12, fontWeight: '600', textTransform: 'capitalize' },
   actionRow: { flexDirection: 'row', gap: 10 },
   actionBtn: { flex: 1, paddingVertical: 10, borderRadius: 10, alignItems: 'center' },
-  confirmBtn: { backgroundColor: Colors.orange500 },
-  disputeBtn: { backgroundColor: Colors.navy700 },
+  confirmBtn: { backgroundColor: c.orange500 },
+  disputeBtn: { backgroundColor: c.navy700 },
   btnDisabled: { opacity: 0.5 },
   actionBtnText: { fontWeight: '600', fontSize: 13 },
   emptyBox:      { alignItems: 'center', paddingTop: 60 },
-  emptyText:     { color: Colors.textSecondary, fontSize: 14 },
+  emptyText:     { color: c.textSecondary, fontSize: 14 },
   searchRow:     { paddingHorizontal: 20, paddingBottom: 12 },
-  searchInput:   { backgroundColor: Colors.navy900, borderWidth: 1, borderColor: Colors.navy700, borderRadius: 10, paddingHorizontal: 14, paddingVertical: 9, fontSize: 14, color: Colors.textPrimary },
+  searchInput:   { backgroundColor: c.navy900, borderWidth: 1, borderColor: c.navy700, borderRadius: 10, paddingHorizontal: 14, paddingVertical: 9, fontSize: 14, color: c.textPrimary },
   loadMoreBtn:   { alignItems: 'center', paddingVertical: 16 },
-  loadMoreText:  { fontSize: 14, color: Colors.orange500, fontWeight: '600' },
+  loadMoreText:  { fontSize: 14, color: c.orange500, fontWeight: '600' },
   // Location section styles
-  locSection:    { paddingTop: 4, borderTopWidth: 1, borderTopColor: Colors.navy700, gap: 8 },
-  locSet:        { backgroundColor: Colors.navy800, borderRadius: 8, padding: 8 },
-  locSetLabel:   { fontSize: 11, color: Colors.orange500, fontWeight: '600', marginBottom: 2 },
-  locSetValue:   { fontSize: 12, color: Colors.textSecondary },
-  locBtn:        { paddingVertical: 8, alignItems: 'center', borderWidth: 1, borderColor: Colors.navy600, borderRadius: 8 },
-  locBtnText:    { fontSize: 13, color: Colors.orange500, fontWeight: '600' },
+  locSection:    { paddingTop: 4, borderTopWidth: 1, borderTopColor: c.navy700, gap: 8 },
+  locSet:        { backgroundColor: c.navy800, borderRadius: 8, padding: 8 },
+  locSetLabel:   { fontSize: 11, color: c.orange500, fontWeight: '600', marginBottom: 2 },
+  locSetValue:   { fontSize: 12, color: c.textSecondary },
+  locBtn:        { paddingVertical: 8, alignItems: 'center', borderWidth: 1, borderColor: c.navy600, borderRadius: 8 },
+  locBtnText:    { fontSize: 13, color: c.orange500, fontWeight: '600' },
   locForm:       { gap: 8, paddingTop: 4 },
   coordRow:      { flexDirection: 'row', gap: 10 },
   coordHalf:     { flex: 1 },
   locActions:    { flexDirection: 'row', gap: 10, marginTop: 4 },
-  locGpsBtn:     { flex: 1, paddingVertical: 10, borderWidth: 1, borderColor: Colors.orange500, borderRadius: 8, alignItems: 'center' },
-  locGpsBtnText: { fontSize: 13, color: Colors.orange500, fontWeight: '600' },
-  locSaveBtn:    { flex: 2, paddingVertical: 10, backgroundColor: Colors.orange500, borderRadius: 8, alignItems: 'center' },
-  locSaveBtnText:{ fontSize: 13, color: Colors.navy950, fontWeight: '700' },
+  locGpsBtn:     { flex: 1, paddingVertical: 10, borderWidth: 1, borderColor: c.orange500, borderRadius: 8, alignItems: 'center' },
+  locGpsBtnText: { fontSize: 13, color: c.orange500, fontWeight: '600' },
+  locSaveBtn:    { flex: 2, paddingVertical: 10, backgroundColor: c.orange500, borderRadius: 8, alignItems: 'center' },
+  locSaveBtnText:{ fontSize: 13, color: c.navy950, fontWeight: '700' },
 })
+}

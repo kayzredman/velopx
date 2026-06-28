@@ -1,9 +1,9 @@
 import { useUser } from '@clerk/clerk-expo'
-import { useCallback, useEffect, useState } from 'react'
+import {useCallback, useEffect, useState, useMemo} from 'react'
 import { View, Text, StyleSheet, ScrollView, RefreshControl, ActivityIndicator, TouchableOpacity } from 'react-native'
 import { SafeAreaView } from 'react-native-safe-area-context'
 import { useRouter } from 'expo-router'
-import { Colors, useApi } from '@velopx/shared'
+import { useApi, useTheme, useThemedStyles, type ThemeColors} from '@velopx/shared'
 
 interface DashboardStats {
   activeQuotes: number
@@ -12,6 +12,8 @@ interface DashboardStats {
 }
 
 export default function GarageDashboard() {
+  const styles = useThemedStyles(createStyles)
+  const { colors } = useTheme()
   const { user } = useUser()
   const { apiFetch } = useApi()
   const router = useRouter()
@@ -62,7 +64,7 @@ export default function GarageDashboard() {
     <SafeAreaView style={styles.safe}>
       <ScrollView
         contentContainerStyle={styles.content}
-        refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={Colors.orange500} />}
+        refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={colors.orange500} />}
       >
         <Text style={styles.greeting}>Hey, {user?.firstName ?? 'there'} 👋</Text>
         <Text style={styles.subtitle}>Garage Dashboard</Text>
@@ -71,7 +73,7 @@ export default function GarageDashboard() {
           <View key={stat.label} style={styles.card}>
             <Text style={styles.cardLabel}>{stat.label}</Text>
             {stat.value === undefined ? (
-              <ActivityIndicator color={Colors.orange500} style={{ marginTop: 8 }} />
+              <ActivityIndicator color={colors.orange500} style={{ marginTop: 8 }} />
             ) : (
               <Text style={styles.cardValue}>{stat.value}</Text>
             )}
@@ -92,20 +94,21 @@ export default function GarageDashboard() {
   )
 }
 
-const styles = StyleSheet.create({
-  safe: { flex: 1, backgroundColor: Colors.navy950 },
+function createStyles(c: ThemeColors) {
+  return StyleSheet.create({
+  safe: { flex: 1, backgroundColor: c.navy950 },
   content: { padding: 20, gap: 12 },
-  greeting: { fontSize: 24, fontWeight: '700', color: Colors.textPrimary },
-  subtitle: { fontSize: 14, color: Colors.textSecondary, marginBottom: 12 },
+  greeting: { fontSize: 24, fontWeight: '700', color: c.textPrimary },
+  subtitle: { fontSize: 14, color: c.textSecondary, marginBottom: 12 },
   card: {
-    backgroundColor: Colors.navy900,
+    backgroundColor: c.navy900,
     borderRadius: 14,
     borderWidth: 1,
-    borderColor: Colors.navy700,
+    borderColor: c.navy700,
     padding: 20,
   },
-  cardLabel: { fontSize: 13, color: Colors.textSecondary },
-  cardValue: { fontSize: 32, fontWeight: '700', color: Colors.textPrimary, marginTop: 4 },
+  cardLabel: { fontSize: 13, color: c.textSecondary },
+  cardValue: { fontSize: 32, fontWeight: '700', color: c.textPrimary, marginTop: 4 },
   trackBtn: {
     marginTop: 12,
     alignSelf: 'flex-start',
@@ -113,7 +116,8 @@ const styles = StyleSheet.create({
     paddingVertical: 6,
     borderRadius: 8,
     borderWidth: 1,
-    borderColor: Colors.orange500,
+    borderColor: c.orange500,
   },
-  trackBtnText: { fontSize: 12, fontWeight: '600', color: Colors.orange500 },
+  trackBtnText: { fontSize: 12, fontWeight: '600', color: c.orange500 },
 })
+}

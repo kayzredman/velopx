@@ -1,4 +1,4 @@
-import { useCallback, useRef, useState } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 import { useApi } from './useApi'
 
 export interface PaginatedMeta {
@@ -43,7 +43,7 @@ interface UseLoadMoreResult<T> {
 export function useLoadMore<T extends { id: string }>(
   opts: UseLoadMoreOptions<T>,
 ): UseLoadMoreResult<T> {
-  const { buildPath, limit = 20, initialQuery = '' } = opts
+  const { buildPath, initialQuery = '' } = opts
   const { apiFetch } = useApi()
 
   const [items, setItems] = useState<T[]>([])
@@ -54,7 +54,6 @@ export function useLoadMore<T extends { id: string }>(
   const [total, setTotal] = useState(0)
   const [query, setQueryState] = useState(initialQuery)
   const pageRef = useRef(1)
-  // Prevent double-calls on FlatList's onEndReached
   const loadingMoreRef = useRef(false)
 
   const fetchPage = useCallback(
@@ -74,12 +73,18 @@ export function useLoadMore<T extends { id: string }>(
     [apiFetch, buildPath],
   )
 
-  // Initial load
-  const initialized = useRef(false)
-  if (!initialized.current) {
-    initialized.current = true
-    fetchPage(1, initialQuery, false).finally(() => setLoading(false))
-  }
+  useEffect(() => {
+    let cancelled = false
+    setLoading(true)
+    fetchPage(1, initialQuery, false)
+      .catch(() => {})
+      .finally(() => {
+        if (!cancelled) setLoading(false)
+      })
+    return () => {
+      cancelled = true
+    }
+  }, [fetchPage, initialQuery])
 
   async function onRefresh() {
     setRefreshing(true)

@@ -14,7 +14,7 @@ interface PartCardProps {
 export function PartCard({ part, href, showDealer = true }: PartCardProps) {
   return (
     <Link href={href} className="group block">
-      <Card className="h-full overflow-hidden bg-navy-900 transition-colors group-hover:border-primary/40">
+      <Card className="h-full overflow-hidden transition-colors group-hover:border-primary/40">
         <PartThumbnail images={part.images} alt={part.name} className="rounded-none border-0 border-b border-border" />
         <CardContent className="p-4">
           <div className="mb-2 flex items-start justify-between gap-2">

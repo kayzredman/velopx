@@ -24,7 +24,14 @@ config.resolver.unstable_enablePackageExports = true;
 // multiple AppRegistry instances. The wrong one ends up as global.RN$AppRegistry, so native
 // calls runApplication('main') on the one that still has AppEntryNotFound as the placeholder.
 // Force all requires of these singletons to resolve from THIS app's node_modules.
-const SINGLETONS = ['react', 'react-native', 'expo'];
+const SINGLETONS = [
+  'react',
+  'react-native',
+  'expo',
+  '@clerk/clerk-expo',
+  '@clerk/clerk-react',
+  '@clerk/shared',
+];
 
 // messageSocket.native.ts in @expo/metro-runtime@4.0.1 uses raw CJS require()
 // for react-native internal ES modules. RN 0.81.5 exports them as ES modules

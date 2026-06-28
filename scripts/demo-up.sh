@@ -9,8 +9,16 @@ API_URL="${API_URL:-http://localhost:3100}"
 WEB_URL="${WEB_URL:-http://localhost:3101}"
 export API_URL WEB_URL
 
-echo "==> Starting Docker stack (migrate pushes schema + seeds demo data)…"
+echo "==> Starting Docker stack…"
 docker compose --profile app up -d --build
+
+echo ""
+echo "==> Syncing database schema + demo seed (from repo)…"
+bash scripts/db-sync.sh
+
+echo ""
+echo "==> Restarting API after schema sync…"
+docker compose restart backend
 
 echo ""
 echo "==> Waiting for API health…"

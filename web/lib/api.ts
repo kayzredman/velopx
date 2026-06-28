@@ -76,5 +76,6 @@ export interface Delivery {
   id: string
   status: string
   driverId?: string | null
+  driver?: { id: string; name: string | null; email: string } | null
   order: Order & { buyer?: { name: string | null; email: string } }
 }

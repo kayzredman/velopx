@@ -1,4 +1,4 @@
-import React from 'react'
+import React, { useMemo } from 'react'
 import {
   TouchableOpacity,
   Text,
@@ -6,13 +6,45 @@ import {
   StyleSheet,
   type TouchableOpacityProps,
 } from 'react-native'
-import { Colors } from '../../constants/colors'
+import { useTheme } from '../../theme/ThemeProvider'
+import type { ThemeColors } from '../../theme/colors'
 
 interface ButtonProps extends TouchableOpacityProps {
   label: string
   variant?: 'primary' | 'secondary' | 'ghost' | 'danger'
   loading?: boolean
   fullWidth?: boolean
+}
+
+function createStyles(c: ThemeColors) {
+  return StyleSheet.create({
+    base: {
+      height: 52,
+      borderRadius: 12,
+      alignItems: 'center',
+      justifyContent: 'center',
+      paddingHorizontal: 24,
+    },
+    fullWidth: { width: '100%' },
+    disabled: { opacity: 0.5 },
+    primary: { backgroundColor: c.orange500 },
+    secondary: {
+      backgroundColor: c.navy800,
+      borderWidth: 1,
+      borderColor: c.navy700,
+    },
+    ghost: {
+      backgroundColor: c.transparent,
+      borderWidth: 1,
+      borderColor: c.navy700,
+    },
+    danger: { backgroundColor: c.error },
+    label: { fontSize: 15, fontWeight: '600' },
+    primaryLabel: { color: c.black },
+    secondaryLabel: { color: c.textPrimary },
+    ghostLabel: { color: c.textPrimary },
+    dangerLabel: { color: c.white },
+  })
 }
 
 export function Button({
@@ -24,6 +56,8 @@ export function Button({
   style,
   ...rest
 }: ButtonProps) {
+  const { colors } = useTheme()
+  const styles = useMemo(() => createStyles(colors), [colors])
   const isDisabled = disabled || loading
 
   return (
@@ -41,7 +75,7 @@ export function Button({
     >
       {loading ? (
         <ActivityIndicator
-          color={variant === 'primary' ? Colors.black : Colors.orange500}
+          color={variant === 'primary' ? colors.black : colors.orange500}
           size="small"
         />
       ) : (
@@ -50,53 +84,3 @@ export function Button({
     </TouchableOpacity>
   )
 }
-
-const styles = StyleSheet.create({
-  base: {
-    height: 52,
-    borderRadius: 12,
-    alignItems: 'center',
-    justifyContent: 'center',
-    paddingHorizontal: 24,
-  },
-  fullWidth: {
-    width: '100%',
-  },
-  disabled: {
-    opacity: 0.5,
-  },
-  // ── Variants
-  primary: {
-    backgroundColor: Colors.orange500,
-  },
-  secondary: {
-    backgroundColor: Colors.navy800,
-    borderWidth: 1,
-    borderColor: Colors.navy700,
-  },
-  ghost: {
-    backgroundColor: Colors.transparent,
-    borderWidth: 1,
-    borderColor: Colors.navy700,
-  },
-  danger: {
-    backgroundColor: Colors.error,
-  },
-  // ── Labels
-  label: {
-    fontSize: 15,
-    fontWeight: '600',
-  },
-  primaryLabel: {
-    color: Colors.black,
-  },
-  secondaryLabel: {
-    color: Colors.textPrimary,
-  },
-  ghostLabel: {
-    color: Colors.textPrimary,
-  },
-  dangerLabel: {
-    color: Colors.white,
-  },
-})

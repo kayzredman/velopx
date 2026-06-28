@@ -2,7 +2,7 @@ import { useSignUp, useOAuth } from '@clerk/clerk-expo'
 import * as Linking from 'expo-linking'
 import * as WebBrowser from 'expo-web-browser'
 import { useRouter } from 'expo-router'
-import { useCallback, useState } from 'react'
+import {useCallback, useState, useMemo} from 'react'
 import {
   View,
   Text,
@@ -14,7 +14,7 @@ import {
   ActivityIndicator,
 } from 'react-native'
 import { SafeAreaView } from 'react-native-safe-area-context'
-import { Button, Input, Logo } from '@velopx/shared'
+import {Button, Input, Logo, useTheme, useThemedStyles, type ThemeColors} from '@velopx/shared'
 import { Colors } from '@velopx/shared'
 
 WebBrowser.maybeCompleteAuthSession()
@@ -22,6 +22,8 @@ WebBrowser.maybeCompleteAuthSession()
 type Step = 'form' | 'verify'
 
 export default function SignUpScreen() {
+  const styles = useThemedStyles(createStyles)
+  const { colors } = useTheme()
   const { signUp, setActive, isLoaded } = useSignUp()
   const router = useRouter()
 
@@ -262,6 +264,8 @@ function SocialButton({
   disabled: boolean
   onPress: () => void
 }) {
+  const styles = useThemedStyles(createStyles)
+  const { colors } = useTheme()
   return (
     <TouchableOpacity
       style={[styles.socialBtn, disabled && styles.socialBtnDisabled]}
@@ -270,7 +274,7 @@ function SocialButton({
       activeOpacity={0.75}
     >
       {loading ? (
-        <ActivityIndicator color={Colors.textPrimary} size="small" />
+        <ActivityIndicator color={colors.textPrimary} size="small" />
       ) : (
         <>
           <Text style={[styles.socialSymbol, symbolColor ? { color: symbolColor } : null]}>
@@ -283,8 +287,9 @@ function SocialButton({
   )
 }
 
-const styles = StyleSheet.create({
-  safe: { flex: 1, backgroundColor: Colors.navy950 },
+function createStyles(c: ThemeColors) {
+  return StyleSheet.create({
+  safe: { flex: 1, backgroundColor: c.navy950 },
   flex: { flex: 1 },
   scroll: {
     flexGrow: 1,
@@ -294,29 +299,30 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   logo: { alignSelf: 'center', marginBottom: 32 },
-  title: { fontSize: 28, fontWeight: '700', color: Colors.textPrimary, textAlign: 'center' },
-  subtitle: { fontSize: 15, color: Colors.textSecondary, textAlign: 'center', marginTop: 6, marginBottom: 32 },
+  title: { fontSize: 28, fontWeight: '700', color: c.textPrimary, textAlign: 'center' },
+  subtitle: { fontSize: 15, color: c.textSecondary, textAlign: 'center', marginTop: 6, marginBottom: 32 },
   form: { gap: 16 },
   row: { flexDirection: 'row', gap: 12 },
   socialBtn: {
     height: 52,
     borderRadius: 12,
-    backgroundColor: Colors.navy800,
+    backgroundColor: c.navy800,
     borderWidth: 1,
-    borderColor: Colors.navy700,
+    borderColor: c.navy700,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
     gap: 10,
   },
   socialBtnDisabled: { opacity: 0.5 },
-  socialSymbol: { fontSize: 17, color: Colors.textPrimary, fontWeight: '700' },
-  socialLabel: { fontSize: 15, color: Colors.textPrimary, fontWeight: '500' },
+  socialSymbol: { fontSize: 17, color: c.textPrimary, fontWeight: '700' },
+  socialLabel: { fontSize: 15, color: c.textPrimary, fontWeight: '500' },
   divider: { flexDirection: 'row', alignItems: 'center', gap: 10, marginVertical: 4 },
-  dividerLine: { flex: 1, height: 1, backgroundColor: Colors.navy700 },
-  dividerText: { fontSize: 12, color: Colors.textMuted, textTransform: 'uppercase', letterSpacing: 0.6 },
-  error: { fontSize: 13, color: Colors.error, textAlign: 'center' },
+  dividerLine: { flex: 1, height: 1, backgroundColor: c.navy700 },
+  dividerText: { fontSize: 12, color: c.textMuted, textTransform: 'uppercase', letterSpacing: 0.6 },
+  error: { fontSize: 13, color: c.error, textAlign: 'center' },
   footer: { flexDirection: 'row', justifyContent: 'center', marginTop: 4 },
-  footerText: { color: Colors.textSecondary, fontSize: 13 },
-  link: { color: Colors.orange500, fontSize: 13 },
+  footerText: { color: c.textSecondary, fontSize: 13 },
+  link: { color: c.orange500, fontSize: 13 },
 })
+}

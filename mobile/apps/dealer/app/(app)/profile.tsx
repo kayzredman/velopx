@@ -10,12 +10,31 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context'
 import { useRouter } from 'expo-router'
 import { useUser, useAuth } from '@clerk/clerk-expo'
-import { Colors } from '@velopx/shared'
+import { ThemeToggle, useTheme, useThemedStyles, type ThemeColors } from '@velopx/shared'
+
+function InfoRow({
+  label,
+  value,
+  styles,
+}: {
+  label: string
+  value: string
+  styles: ReturnType<typeof createStyles>
+}) {
+  return (
+    <View style={styles.infoRow}>
+      <Text style={styles.infoLabel}>{label}</Text>
+      <Text style={styles.infoValue} numberOfLines={1}>{value}</Text>
+    </View>
+  )
+}
 
 export default function DealerProfileScreen() {
-  const { user }    = useUser()
+  const { colors } = useTheme()
+  const styles = useThemedStyles(createStyles)
+  const { user } = useUser()
   const { signOut } = useAuth()
-  const router      = useRouter()
+  const router = useRouter()
   const [loading, setLoading] = useState(false)
 
   async function handleSignOut() {
@@ -40,20 +59,24 @@ export default function DealerProfileScreen() {
   }
 
   const fullName = user?.fullName ?? user?.username ?? '—'
-  const email    = user?.primaryEmailAddress?.emailAddress ?? '—'
-  const initials = fullName !== '—'
-    ? fullName.split(' ').map((n) => n[0]).join('').slice(0, 2).toUpperCase()
-    : '?'
+  const email = user?.primaryEmailAddress?.emailAddress ?? '—'
+  const initials =
+    fullName !== '—'
+      ? fullName
+          .split(' ')
+          .map((n) => n[0])
+          .join('')
+          .slice(0, 2)
+          .toUpperCase()
+      : '?'
 
   return (
     <SafeAreaView style={styles.safe}>
       <View style={styles.container}>
-        {/* Header */}
         <View style={styles.header}>
           <Text style={styles.title}>Profile</Text>
         </View>
 
-        {/* Avatar + name */}
         <View style={styles.avatarSection}>
           <View style={styles.avatar}>
             <Text style={styles.avatarText}>{initials}</Text>
@@ -65,137 +88,99 @@ export default function DealerProfileScreen() {
           </View>
         </View>
 
-        {/* Info rows */}
-        <View style={styles.infoCard}>
-          <InfoRow label="Name"  value={fullName} />
-          <InfoRow label="Email" value={email} />
+        <View style={styles.section}>
+          <Text style={styles.sectionLabel}>Appearance</Text>
+          <ThemeToggle />
         </View>
 
-        {/* Sign out */}
+        <View style={styles.infoCard}>
+          <InfoRow label="Name" value={fullName} styles={styles} />
+          <InfoRow label="Email" value={email} styles={styles} />
+        </View>
+
         <TouchableOpacity
           style={styles.signOutBtn}
           onPress={() => void handleSignOut()}
           disabled={loading}
           activeOpacity={0.8}
         >
-          {loading
-            ? <ActivityIndicator color={Colors.error} />
-            : <Text style={styles.signOutText}>Sign Out</Text>
-          }
+          {loading ? (
+            <ActivityIndicator color={colors.error} />
+          ) : (
+            <Text style={styles.signOutText}>Sign Out</Text>
+          )}
         </TouchableOpacity>
       </View>
     </SafeAreaView>
   )
 }
 
-function InfoRow({ label, value }: { label: string; value: string }) {
-  return (
-    <View style={styles.infoRow}>
-      <Text style={styles.infoLabel}>{label}</Text>
-      <Text style={styles.infoValue} numberOfLines={1}>{value}</Text>
-    </View>
-  )
+function createStyles(c: ThemeColors) {
+  return StyleSheet.create({
+    safe: { flex: 1, backgroundColor: c.navy950 },
+    container: { flex: 1, paddingHorizontal: 20, paddingTop: 12 },
+    header: { marginBottom: 28 },
+    title: { fontSize: 24, fontWeight: '700', color: c.textPrimary },
+    avatarSection: { alignItems: 'center', marginBottom: 28 },
+    avatar: {
+      width: 80,
+      height: 80,
+      borderRadius: 40,
+      backgroundColor: c.navy700,
+      alignItems: 'center',
+      justifyContent: 'center',
+      marginBottom: 12,
+    },
+    avatarText: { fontSize: 28, fontWeight: '700', color: c.orange500 },
+    name: { fontSize: 18, fontWeight: '700', color: c.textPrimary, marginBottom: 4 },
+    email: { fontSize: 13, color: c.textSecondary, marginBottom: 10 },
+    rolePill: {
+      backgroundColor: c.navy700,
+      paddingHorizontal: 12,
+      paddingVertical: 4,
+      borderRadius: 12,
+    },
+    roleText: {
+      fontSize: 11,
+      fontWeight: '600',
+      color: c.orange500,
+      textTransform: 'uppercase',
+      letterSpacing: 0.8,
+    },
+    section: { marginBottom: 24, gap: 10 },
+    sectionLabel: { fontSize: 13, fontWeight: '600', color: c.textSecondary },
+    infoCard: {
+      backgroundColor: c.navy800,
+      borderRadius: 12,
+      borderWidth: 1,
+      borderColor: c.navy700,
+      marginBottom: 24,
+      overflow: 'hidden',
+    },
+    infoRow: {
+      flexDirection: 'row',
+      justifyContent: 'space-between',
+      alignItems: 'center',
+      paddingHorizontal: 16,
+      paddingVertical: 14,
+      borderBottomWidth: 1,
+      borderBottomColor: c.navy700,
+    },
+    infoLabel: { fontSize: 13, color: c.textSecondary, fontWeight: '500' },
+    infoValue: {
+      fontSize: 13,
+      color: c.textPrimary,
+      fontWeight: '500',
+      maxWidth: '60%',
+      textAlign: 'right',
+    },
+    signOutBtn: {
+      borderWidth: 1,
+      borderColor: c.error,
+      borderRadius: 12,
+      paddingVertical: 14,
+      alignItems: 'center',
+    },
+    signOutText: { color: c.error, fontWeight: '700', fontSize: 15 },
+  })
 }
-
-const styles = StyleSheet.create({
-  safe: {
-    flex: 1,
-    backgroundColor: Colors.navy900,
-  },
-  container: {
-    flex: 1,
-    paddingHorizontal: 20,
-    paddingTop: 12,
-  },
-  header: {
-    marginBottom: 28,
-  },
-  title: {
-    fontSize: 24,
-    fontWeight: '700',
-    color: Colors.textPrimary,
-  },
-  avatarSection: {
-    alignItems: 'center',
-    marginBottom: 28,
-  },
-  avatar: {
-    width: 80,
-    height: 80,
-    borderRadius: 40,
-    backgroundColor: Colors.navy700,
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginBottom: 12,
-  },
-  avatarText: {
-    fontSize: 28,
-    fontWeight: '700',
-    color: Colors.orange500,
-  },
-  name: {
-    fontSize: 18,
-    fontWeight: '700',
-    color: Colors.textPrimary,
-    marginBottom: 4,
-  },
-  email: {
-    fontSize: 13,
-    color: Colors.textSecondary,
-    marginBottom: 10,
-  },
-  rolePill: {
-    backgroundColor: Colors.navy700,
-    paddingHorizontal: 12,
-    paddingVertical: 4,
-    borderRadius: 12,
-  },
-  roleText: {
-    fontSize: 11,
-    fontWeight: '600',
-    color: Colors.orange500,
-    textTransform: 'uppercase',
-    letterSpacing: 0.8,
-  },
-  infoCard: {
-    backgroundColor: Colors.navy800,
-    borderRadius: 12,
-    borderWidth: 1,
-    borderColor: Colors.navy700,
-    marginBottom: 24,
-    overflow: 'hidden',
-  },
-  infoRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    paddingHorizontal: 16,
-    paddingVertical: 14,
-    borderBottomWidth: 1,
-    borderBottomColor: Colors.navy700,
-  },
-  infoLabel: {
-    fontSize: 13,
-    color: Colors.textSecondary,
-    fontWeight: '500',
-  },
-  infoValue: {
-    fontSize: 13,
-    color: Colors.textPrimary,
-    fontWeight: '500',
-    maxWidth: '60%',
-    textAlign: 'right',
-  },
-  signOutBtn: {
-    borderWidth: 1,
-    borderColor: Colors.error,
-    borderRadius: 12,
-    paddingVertical: 14,
-    alignItems: 'center',
-  },
-  signOutText: {
-    color: Colors.error,
-    fontWeight: '700',
-    fontSize: 15,
-  },
-})

@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import {useState, useMemo} from 'react'
 import {
   View,
   Text,
@@ -10,9 +10,28 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context'
 import { useRouter } from 'expo-router'
 import { useUser, useAuth } from '@clerk/clerk-expo'
-import { Colors } from '@velopx/shared'
+import { ThemeToggle, useTheme, useThemedStyles, type ThemeColors } from '@velopx/shared'
+
+function InfoRow({
+  label,
+  value,
+  styles,
+}: {
+  label: string
+  value: string
+  styles: ReturnType<typeof createStyles>
+}) {
+  return (
+    <View style={styles.infoRow}>
+      <Text style={styles.infoLabel}>{label}</Text>
+      <Text style={styles.infoValue} numberOfLines={1}>{value}</Text>
+    </View>
+  )
+}
 
 export default function DriverProfileScreen() {
+  const styles = useThemedStyles(createStyles)
+  const { colors } = useTheme()
   const { user }      = useUser()
   const { signOut }   = useAuth()
   const router        = useRouter()
@@ -63,10 +82,14 @@ export default function DriverProfileScreen() {
           </View>
         </View>
 
-        {/* Info rows */}
+        <View style={styles.section}>
+          <Text style={styles.sectionLabel}>Appearance</Text>
+          <ThemeToggle />
+        </View>
+
         <View style={styles.infoCard}>
-          <InfoRow label="Name"  value={fullName} />
-          <InfoRow label="Email" value={email} />
+          <InfoRow label="Name" value={fullName} styles={styles} />
+          <InfoRow label="Email" value={email} styles={styles} />
         </View>
 
         {/* Sign out */}
@@ -77,7 +100,7 @@ export default function DriverProfileScreen() {
           activeOpacity={0.8}
         >
           {loading
-            ? <ActivityIndicator color={Colors.error} />
+            ? <ActivityIndicator color={colors.error} />
             : <Text style={styles.signOutText}>Sign Out</Text>
           }
         </TouchableOpacity>
@@ -86,19 +109,11 @@ export default function DriverProfileScreen() {
   )
 }
 
-function InfoRow({ label, value }: { label: string; value: string }) {
-  return (
-    <View style={styles.infoRow}>
-      <Text style={styles.infoLabel}>{label}</Text>
-      <Text style={styles.infoValue} numberOfLines={1}>{value}</Text>
-    </View>
-  )
-}
-
-const styles = StyleSheet.create({
+function createStyles(c: ThemeColors) {
+  return StyleSheet.create({
   safe: {
     flex: 1,
-    backgroundColor: Colors.navy900,
+    backgroundColor: c.navy900,
   },
   container: {
     flex: 1,
@@ -111,7 +126,7 @@ const styles = StyleSheet.create({
   title: {
     fontSize: 24,
     fontWeight: '700',
-    color: Colors.textPrimary,
+    color: c.textPrimary,
   },
   avatarSection: {
     alignItems: 'center',
@@ -121,7 +136,7 @@ const styles = StyleSheet.create({
     width: 80,
     height: 80,
     borderRadius: 40,
-    backgroundColor: Colors.navy700,
+    backgroundColor: c.navy700,
     alignItems: 'center',
     justifyContent: 'center',
     marginBottom: 12,
@@ -129,21 +144,21 @@ const styles = StyleSheet.create({
   avatarText: {
     fontSize: 28,
     fontWeight: '700',
-    color: Colors.orange500,
+    color: c.orange500,
   },
   name: {
     fontSize: 18,
     fontWeight: '700',
-    color: Colors.textPrimary,
+    color: c.textPrimary,
     marginBottom: 4,
   },
   email: {
     fontSize: 13,
-    color: Colors.textSecondary,
+    color: c.textSecondary,
     marginBottom: 10,
   },
   rolePill: {
-    backgroundColor: Colors.navy700,
+    backgroundColor: c.navy700,
     paddingHorizontal: 12,
     paddingVertical: 4,
     borderRadius: 12,
@@ -151,15 +166,17 @@ const styles = StyleSheet.create({
   roleText: {
     fontSize: 11,
     fontWeight: '600',
-    color: Colors.orange500,
+    color: c.orange500,
     textTransform: 'uppercase',
     letterSpacing: 0.8,
   },
+  section: { marginBottom: 24, gap: 10 },
+  sectionLabel: { fontSize: 13, fontWeight: '600', color: c.textSecondary },
   infoCard: {
-    backgroundColor: Colors.navy800,
+    backgroundColor: c.navy800,
     borderRadius: 12,
     borderWidth: 1,
-    borderColor: Colors.navy700,
+    borderColor: c.navy700,
     marginBottom: 24,
     overflow: 'hidden',
   },
@@ -170,30 +187,31 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
     paddingVertical: 14,
     borderBottomWidth: 1,
-    borderBottomColor: Colors.navy700,
+    borderBottomColor: c.navy700,
   },
   infoLabel: {
     fontSize: 13,
-    color: Colors.textSecondary,
+    color: c.textSecondary,
     fontWeight: '500',
   },
   infoValue: {
     fontSize: 13,
-    color: Colors.textPrimary,
+    color: c.textPrimary,
     fontWeight: '500',
     maxWidth: '60%',
     textAlign: 'right',
   },
   signOutBtn: {
     borderWidth: 1,
-    borderColor: Colors.error,
+    borderColor: c.error,
     borderRadius: 12,
     paddingVertical: 14,
     alignItems: 'center',
   },
   signOutText: {
-    color: Colors.error,
+    color: c.error,
     fontWeight: '700',
     fontSize: 15,
   },
 })
+}

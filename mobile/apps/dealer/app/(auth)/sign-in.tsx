@@ -2,7 +2,7 @@ import { useSignIn, useOAuth } from '@clerk/clerk-expo'
 import * as Linking from 'expo-linking'
 import * as WebBrowser from 'expo-web-browser'
 import { useRouter } from 'expo-router'
-import { useCallback, useState } from 'react'
+import {useCallback, useState, useMemo} from 'react'
 import {
   View,
   Text,
@@ -14,13 +14,15 @@ import {
   ActivityIndicator,
 } from 'react-native'
 import { SafeAreaView } from 'react-native-safe-area-context'
-import { Button, Input, Logo } from '@velopx/shared'
+import {Button, Input, Logo, useTheme, useThemedStyles, type ThemeColors} from '@velopx/shared'
 import { Colors } from '@velopx/shared'
 
 // Required to dismiss the in-app browser after OAuth completes (Android)
 WebBrowser.maybeCompleteAuthSession()
 
 export default function SignInScreen() {
+  const styles = useThemedStyles(createStyles)
+  const { colors } = useTheme()
   const { signIn, setActive, isLoaded } = useSignIn()
   const router = useRouter()
 
@@ -197,6 +199,8 @@ function SocialButton({
   disabled: boolean
   onPress: () => void
 }) {
+  const styles = useThemedStyles(createStyles)
+  const { colors } = useTheme()
   return (
     <TouchableOpacity
       style={[styles.socialBtn, disabled && styles.socialBtnDisabled]}
@@ -205,7 +209,7 @@ function SocialButton({
       activeOpacity={0.75}
     >
       {loading ? (
-        <ActivityIndicator color={Colors.textPrimary} size="small" />
+        <ActivityIndicator color={colors.textPrimary} size="small" />
       ) : (
         <>
           <Text style={[styles.socialSymbol, symbolColor ? { color: symbolColor } : null]}>
@@ -218,10 +222,11 @@ function SocialButton({
   )
 }
 
-const styles = StyleSheet.create({
+function createStyles(c: ThemeColors) {
+  return StyleSheet.create({
   safe: {
     flex: 1,
-    backgroundColor: Colors.navy950,
+    backgroundColor: c.navy950,
   },
   flex: {
     flex: 1,
@@ -240,12 +245,12 @@ const styles = StyleSheet.create({
   title: {
     fontSize: 28,
     fontWeight: '700',
-    color: Colors.textPrimary,
+    color: c.textPrimary,
     textAlign: 'center',
   },
   subtitle: {
     fontSize: 15,
-    color: Colors.textSecondary,
+    color: c.textSecondary,
     textAlign: 'center',
     marginTop: 6,
     marginBottom: 32,
@@ -256,9 +261,9 @@ const styles = StyleSheet.create({
   socialBtn: {
     height: 52,
     borderRadius: 12,
-    backgroundColor: Colors.navy800,
+    backgroundColor: c.navy800,
     borderWidth: 1,
-    borderColor: Colors.navy700,
+    borderColor: c.navy700,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
@@ -269,12 +274,12 @@ const styles = StyleSheet.create({
   },
   socialSymbol: {
     fontSize: 17,
-    color: Colors.textPrimary,
+    color: c.textPrimary,
     fontWeight: '700',
   },
   socialLabel: {
     fontSize: 15,
-    color: Colors.textPrimary,
+    color: c.textPrimary,
     fontWeight: '500',
   },
   divider: {
@@ -286,17 +291,17 @@ const styles = StyleSheet.create({
   dividerLine: {
     flex: 1,
     height: 1,
-    backgroundColor: Colors.navy700,
+    backgroundColor: c.navy700,
   },
   dividerText: {
     fontSize: 12,
-    color: Colors.textMuted,
+    color: c.textMuted,
     textTransform: 'uppercase',
     letterSpacing: 0.6,
   },
   error: {
     fontSize: 13,
-    color: Colors.error,
+    color: c.error,
     textAlign: 'center',
   },
   footer: {
@@ -305,12 +310,13 @@ const styles = StyleSheet.create({
     marginTop: 8,
   },
   footerText: {
-    color: Colors.textSecondary,
+    color: c.textSecondary,
     fontSize: 14,
   },
   link: {
-    color: Colors.orange500,
+    color: c.orange500,
     fontSize: 14,
     fontWeight: '600',
   },
 })
+}

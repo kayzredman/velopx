@@ -1,12 +1,15 @@
 import { useAuth } from '@clerk/clerk-expo'
+import { useCallback, useRef } from 'react'
 
-const API_URL = process.env.EXPO_PUBLIC_API_URL ?? 'http://localhost:3000'
+const API_URL = process.env.EXPO_PUBLIC_API_URL ?? 'http://localhost:3100'
 
 export function useApi() {
   const { getToken } = useAuth()
+  const getTokenRef = useRef(getToken)
+  getTokenRef.current = getToken
 
-  async function apiFetch<T>(path: string, options?: RequestInit): Promise<T> {
-    const token = await getToken()
+  const apiFetch = useCallback(async <T>(path: string, options?: RequestInit): Promise<T> => {
+    const token = await getTokenRef.current()
 
     const res = await fetch(`${API_URL}${path}`, {
       ...options,
@@ -32,7 +35,7 @@ export function useApi() {
     }
 
     return JSON.parse(text) as T
-  }
+  }, [])
 
   return { apiFetch }
 }

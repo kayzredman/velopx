@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import {useState, useMemo} from 'react'
 import {
   View,
   Text,
@@ -13,7 +13,7 @@ import {
   Platform,
 } from 'react-native'
 import { SafeAreaView } from 'react-native-safe-area-context'
-import { Colors, useApi, useLoadMore } from '@velopx/shared'
+import { useApi, useLoadMore, useTheme, useThemedStyles, type ThemeColors} from '@velopx/shared'
 
 type JobCardStatus = 'waiting_for_parts' | 'in_progress' | 'complete'
 
@@ -35,10 +35,12 @@ const STATUS_LABEL: Record<JobCardStatus, string> = {
   complete: 'Complete',
 }
 
-const STATUS_COLOURS: Record<JobCardStatus, { bg: string; text: string; border: string }> = {
-  waiting_for_parts: { bg: Colors.warning + '1A', text: Colors.warning, border: Colors.warning + '4D' },
-  in_progress: { bg: Colors.info + '1A', text: Colors.info, border: Colors.info + '4D' },
-  complete: { bg: Colors.success + '1A', text: Colors.success, border: Colors.success + '4D' },
+function jobStatusColours(colors: ThemeColors): Record<JobCardStatus, { bg: string; text: string; border: string }> {
+  return {
+    waiting_for_parts: { bg: colors.warning + '1A', text: colors.warning, border: colors.warning + '4D' },
+    in_progress: { bg: colors.info + '1A', text: colors.info, border: colors.info + '4D' },
+    complete: { bg: colors.success + '1A', text: colors.success, border: colors.success + '4D' },
+  }
 }
 
 const NEXT_STATUS: Partial<Record<JobCardStatus, JobCardStatus>> = {
@@ -60,6 +62,9 @@ const EMPTY_FORM = {
 }
 
 export default function JobCardsScreen() {
+  const styles = useThemedStyles(createStyles)
+  const { colors } = useTheme()
+  const STATUS_COLOURS = useMemo(() => jobStatusColours(colors), [colors])
   const { apiFetch } = useApi()
   const { items: cards, loading, loadingMore, refreshing, hasMore, total,
           query, setQuery, onRefresh, onLoadMore, updateItem } = useLoadMore<JobCard>({
@@ -147,7 +152,7 @@ export default function JobCardsScreen() {
           value={query}
           onChangeText={setQuery}
           placeholder="Search customer, vehicle, claim…"
-          placeholderTextColor={Colors.textSecondary}
+          placeholderTextColor={colors.textSecondary}
           returnKeyType="search"
           clearButtonMode="while-editing"
         />
@@ -156,14 +161,14 @@ export default function JobCardsScreen() {
       {/* List */}
       {loading ? (
         <View style={styles.centerBox}>
-          <ActivityIndicator color={Colors.orange500} />
+          <ActivityIndicator color={colors.orange500} />
         </View>
       ) : (
         <FlatList
           data={cards}
           keyExtractor={(c) => c.id}
           contentContainerStyle={styles.scrollContent}
-          refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={Colors.orange500} />}
+          refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={colors.orange500} />}
           onEndReached={onLoadMore}
           onEndReachedThreshold={0.3}
           ListEmptyComponent={
@@ -171,7 +176,7 @@ export default function JobCardsScreen() {
           }
           ListFooterComponent={
             loadingMore ? (
-              <ActivityIndicator color={Colors.orange500} style={{ paddingVertical: 16 }} />
+              <ActivityIndicator color={colors.orange500} style={{ paddingVertical: 16 }} />
             ) : hasMore ? (
               <TouchableOpacity onPress={onLoadMore} style={styles.loadMoreBtn}>
                 <Text style={styles.loadMoreText}>Load More</Text>
@@ -224,7 +229,7 @@ export default function JobCardsScreen() {
                     disabled={advancingId === card.id}
                   >
                     {advancingId === card.id ? (
-                      <ActivityIndicator size="small" color={Colors.orange500} />
+                      <ActivityIndicator size="small" color={colors.orange500} />
                     ) : (
                       <Text style={styles.advanceBtnText}>{nextLabel} →</Text>
                     )}
@@ -254,7 +259,7 @@ export default function JobCardsScreen() {
               value={form.customerName}
               onChangeText={(v) => setForm((f) => ({ ...f, customerName: v }))}
               placeholder="e.g. John Banda"
-              placeholderTextColor={Colors.textMuted}
+              placeholderTextColor={colors.textMuted}
             />
 
             <Text style={styles.fieldLabel}>Vehicle Reg</Text>
@@ -263,7 +268,7 @@ export default function JobCardsScreen() {
               value={form.vehicleReg}
               onChangeText={(v) => setForm((f) => ({ ...f, vehicleReg: v }))}
               placeholder="e.g. KCA 123A"
-              placeholderTextColor={Colors.textMuted}
+              placeholderTextColor={colors.textMuted}
               autoCapitalize="characters"
             />
 
@@ -273,7 +278,7 @@ export default function JobCardsScreen() {
               value={form.description}
               onChangeText={(v) => setForm((f) => ({ ...f, description: v }))}
               placeholder="Work to be done…"
-              placeholderTextColor={Colors.textMuted}
+              placeholderTextColor={colors.textMuted}
               multiline
             />
 
@@ -283,7 +288,7 @@ export default function JobCardsScreen() {
               value={form.mechanic}
               onChangeText={(v) => setForm((f) => ({ ...f, mechanic: v }))}
               placeholder="e.g. James Odhiambo"
-              placeholderTextColor={Colors.textMuted}
+              placeholderTextColor={colors.textMuted}
             />
 
             <Text style={styles.fieldLabel}>Claim Reference</Text>
@@ -292,7 +297,7 @@ export default function JobCardsScreen() {
               value={form.claimReference}
               onChangeText={(v) => setForm((f) => ({ ...f, claimReference: v }))}
               placeholder="e.g. CLM-2025-0001"
-              placeholderTextColor={Colors.textMuted}
+              placeholderTextColor={colors.textMuted}
             />
 
             <View style={styles.modalActions}>
@@ -322,8 +327,9 @@ export default function JobCardsScreen() {
   )
 }
 
-const styles = StyleSheet.create({
-  safeArea: { flex: 1, backgroundColor: Colors.navy950 },
+function createStyles(c: ThemeColors) {
+  return StyleSheet.create({
+  safeArea: { flex: 1, backgroundColor: c.navy950 },
   header: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -332,36 +338,36 @@ const styles = StyleSheet.create({
     paddingTop: 8,
     paddingBottom: 16,
   },
-  headerTitle: { color: Colors.textPrimary, fontSize: 22, fontWeight: '700' },
-  headerCount: { color: Colors.textSecondary, fontSize: 13, marginTop: 2 },
+  headerTitle: { color: c.textPrimary, fontSize: 22, fontWeight: '700' },
+  headerCount: { color: c.textSecondary, fontSize: 13, marginTop: 2 },
   newBtn: {
-    backgroundColor: Colors.orange500,
+    backgroundColor: c.orange500,
     paddingHorizontal: 16,
     paddingVertical: 8,
     borderRadius: 8,
   },
   newBtnText: { color: '#fff', fontSize: 14, fontWeight: '600' },
   searchRow: { paddingHorizontal: 16, paddingBottom: 8 },
-  searchInput: { backgroundColor: Colors.navy900, borderWidth: 1, borderColor: Colors.navy700, borderRadius: 10, paddingHorizontal: 14, paddingVertical: 9, fontSize: 14, color: Colors.textPrimary },
+  searchInput: { backgroundColor: c.navy900, borderWidth: 1, borderColor: c.navy700, borderRadius: 10, paddingHorizontal: 14, paddingVertical: 9, fontSize: 14, color: c.textPrimary },
   centerBox: { flex: 1, alignItems: 'center', justifyContent: 'center' },
   scroll: { flex: 1 },
   scrollContent: { padding: 16, paddingBottom: 32 },
-  emptyText: { textAlign: 'center', color: Colors.textMuted, fontSize: 14, marginTop: 64 },
-  errorText: { color: Colors.error, fontSize: 12, fontFamily: 'monospace', marginBottom: 8 },
+  emptyText: { textAlign: 'center', color: c.textMuted, fontSize: 14, marginTop: 64 },
+  errorText: { color: c.error, fontSize: 12, fontFamily: 'monospace', marginBottom: 8 },
   loadMoreBtn: { alignItems: 'center', paddingVertical: 16 },
-  loadMoreText: { fontSize: 14, color: Colors.orange500, fontWeight: '600' },
+  loadMoreText: { fontSize: 14, color: c.orange500, fontWeight: '600' },
   // Card
   card: {
-    backgroundColor: Colors.navy900,
+    backgroundColor: c.navy900,
     borderRadius: 12,
     borderWidth: 1,
-    borderColor: Colors.navy700,
+    borderColor: c.navy700,
     padding: 16,
     marginBottom: 12,
   },
   cardTop: { flexDirection: 'row', alignItems: 'flex-start', marginBottom: 8 },
-  customerName: { color: Colors.textPrimary, fontSize: 15, fontWeight: '600' },
-  vehicleReg: { color: Colors.textSecondary, fontSize: 12, marginTop: 2 },
+  customerName: { color: c.textPrimary, fontSize: 15, fontWeight: '600' },
+  vehicleReg: { color: c.textSecondary, fontSize: 12, marginTop: 2 },
   statusBadge: {
     borderWidth: 1,
     borderRadius: 12,
@@ -369,16 +375,16 @@ const styles = StyleSheet.create({
     paddingVertical: 4,
   },
   statusText: { fontSize: 11, fontWeight: '600' },
-  description: { color: Colors.textSecondary, fontSize: 13, lineHeight: 18, marginBottom: 10 },
+  description: { color: c.textSecondary, fontSize: 13, lineHeight: 18, marginBottom: 10 },
   metaRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginBottom: 12 },
-  metaText: { color: Colors.textMuted, fontSize: 12 },
+  metaText: { color: c.textMuted, fontSize: 12 },
   advanceBtn: {
     borderTopWidth: 1,
-    borderTopColor: Colors.navy700,
+    borderTopColor: c.navy700,
     paddingTop: 12,
     alignItems: 'center',
   },
-  advanceBtnText: { color: Colors.orange500, fontSize: 14, fontWeight: '600' },
+  advanceBtnText: { color: c.orange500, fontSize: 14, fontWeight: '600' },
   // Modal
   modalOverlay: {
     flex: 1,
@@ -386,16 +392,16 @@ const styles = StyleSheet.create({
     backgroundColor: 'rgba(0,0,0,0.6)',
   },
   modalBox: {
-    backgroundColor: Colors.navy900,
+    backgroundColor: c.navy900,
     borderTopLeftRadius: 20,
     borderTopRightRadius: 20,
     padding: 24,
     paddingBottom: 36,
     maxHeight: '90%',
   },
-  modalTitle: { color: Colors.textPrimary, fontSize: 18, fontWeight: '700', marginBottom: 16 },
+  modalTitle: { color: c.textPrimary, fontSize: 18, fontWeight: '700', marginBottom: 16 },
   fieldLabel: {
-    color: Colors.textMuted,
+    color: c.textMuted,
     fontSize: 11,
     fontWeight: '600',
     textTransform: 'uppercase',
@@ -403,13 +409,13 @@ const styles = StyleSheet.create({
     marginBottom: 6,
   },
   fieldInput: {
-    backgroundColor: Colors.navy950,
+    backgroundColor: c.navy950,
     borderWidth: 1,
-    borderColor: Colors.navy700,
+    borderColor: c.navy700,
     borderRadius: 8,
     paddingHorizontal: 12,
     paddingVertical: 10,
-    color: Colors.textPrimary,
+    color: c.textPrimary,
     fontSize: 14,
     marginBottom: 14,
   },
@@ -419,16 +425,17 @@ const styles = StyleSheet.create({
     paddingVertical: 12,
     borderRadius: 10,
     borderWidth: 1,
-    borderColor: Colors.navy700,
+    borderColor: c.navy700,
     alignItems: 'center',
   },
-  cancelText: { color: Colors.textSecondary, fontSize: 14, fontWeight: '600' },
+  cancelText: { color: c.textSecondary, fontSize: 14, fontWeight: '600' },
   createBtn: {
     flex: 1,
     paddingVertical: 12,
     borderRadius: 10,
-    backgroundColor: Colors.orange500,
+    backgroundColor: c.orange500,
     alignItems: 'center',
   },
   createBtnText: { color: '#fff', fontSize: 14, fontWeight: '700' },
 })
+}

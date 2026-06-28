@@ -3,6 +3,8 @@
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import { UserButton } from '@clerk/nextjs'
+import { ThemeToggle } from '@/components/ui/theme-toggle'
+import { ThemeBar } from '@/components/layout/ThemeBar'
 
 function Ico({ d, d2 }: { d: string; d2?: string }) {
   return (
@@ -77,17 +79,17 @@ function NavItem({ item }: { item: typeof MAIN_NAV[0] }) {
   return (
     <Link
       href={item.href}
-      className={`flex items-center gap-3 px-3 py-2 rounded-lg text-sm transition-colors ${
+      className={`flex items-center gap-3 rounded-lg px-3 py-2 text-sm transition-colors ${
         isActive
-          ? 'bg-[#F5A623]/10 text-[#F5A623] font-medium'
-          : 'text-[#8A97AA] hover:text-white hover:bg-white/5'
+          ? 'border-l-2 border-primary bg-primary/15 font-medium text-primary shadow-sm shadow-primary/10'
+          : 'text-sidebar-muted hover:bg-white/5 hover:text-sidebar-foreground'
       }`}
     >
       {item.icon}
       <span className="flex-1">{item.label}</span>
       {item.badge != null && (
         <span className={`text-[10px] font-bold px-1.5 py-0.5 rounded-full ${
-          isActive ? 'bg-[#F5A623]/20 text-[#F5A623]' : 'bg-[#1E2E48] text-[#8A97AA]'
+          isActive ? 'bg-primary/25 text-primary' : 'bg-white/10 text-sidebar-muted'
         }`}>
           {item.badge}
         </span>
@@ -98,40 +100,47 @@ function NavItem({ item }: { item: typeof MAIN_NAV[0] }) {
 
 export default function GarageLayout({ children }: { children: React.ReactNode }) {
   return (
-    <div className="min-h-screen bg-[#060F1E] flex">
-      <aside className="fixed top-0 left-0 h-screen w-[264px] bg-[#0A1628] border-r border-[#1E2E48] flex flex-col z-40">
-        <div className="px-5 py-5 border-b border-[#1E2E48]">
+    <div className="min-h-screen bg-background flex">
+      <aside className="portal-sidebar fixed top-0 left-0 z-40 flex h-screen w-[264px] flex-col border-r">
+        <div className="border-b border-sidebar-border px-5 py-5 pl-6">
           <Link href="/garage" className="flex items-center gap-2.5">
-            <span className="w-7 h-7 rounded-lg bg-[#F5A623] flex items-center justify-center text-black font-black text-sm">⚡</span>
+            <span className="flex h-7 w-7 items-center justify-center rounded-lg bg-primary text-sm font-black text-primary-foreground">⚡</span>
             <div>
-              <span className="text-white font-bold text-sm tracking-tight">velopX</span>
-              <span className="block text-[#8A97AA] text-[10px] uppercase tracking-widest leading-none mt-0.5">Garage</span>
+              <span className="text-sm font-bold tracking-tight text-sidebar-foreground">velopX</span>
+              <span className="mt-0.5 block text-[10px] uppercase leading-none tracking-widest text-sidebar-muted">Garage</span>
             </div>
           </Link>
         </div>
 
-        <nav className="flex-1 overflow-y-auto px-3 py-4 flex flex-col gap-1">
-          <p className="text-[#3D5068] text-[9px] font-bold uppercase tracking-[0.15em] px-3 mb-1">Workshop</p>
+        <nav className="flex flex-1 flex-col gap-1 overflow-y-auto px-3 py-4 pl-4">
+          <p className="mb-1 px-3 text-[9px] font-bold uppercase tracking-[0.15em] text-sidebar-muted/80">Workshop</p>
           {MAIN_NAV.map((item) => (
             <NavItem key={item.href} item={item} />
           ))}
 
-          <p className="text-[#3D5068] text-[9px] font-bold uppercase tracking-[0.15em] px-3 mt-5 mb-1">Management</p>
+          <p className="mb-1 mt-5 px-3 text-[9px] font-bold uppercase tracking-[0.15em] text-sidebar-muted/80">Management</p>
           {TOOLS_NAV.map((item) => (
             <NavItem key={item.href} item={item} />
           ))}
         </nav>
 
-        <div className="px-5 py-4 border-t border-[#1E2E48] flex items-center gap-3">
+        <div className="border-t border-sidebar-border px-5 py-3 pl-6">
+          <p className="mb-2 text-xs font-medium text-sidebar-muted">Appearance</p>
+          <ThemeToggle variant="sidebar" />
+        </div>
+        <div className="flex items-center gap-3 border-t border-sidebar-border px-5 py-4 pl-6">
           <UserButton />
           <div className="min-w-0">
-            <p className="text-white text-xs font-medium truncate">Ama Owusu</p>
-            <p className="text-[#8A97AA] text-[10px] truncate">Kumasi AutoFix</p>
+            <p className="truncate text-xs font-medium text-sidebar-foreground">Ama Owusu</p>
+            <p className="truncate text-[10px] text-sidebar-muted">Kumasi AutoFix</p>
           </div>
         </div>
       </aside>
 
-      <main className="flex-1 ml-[264px] min-h-screen">
+      <main className="ml-[264px] min-h-screen flex-1 bg-background">
+        <div className="p-6 pb-0 md:hidden">
+          <ThemeBar />
+        </div>
         {children}
       </main>
     </div>

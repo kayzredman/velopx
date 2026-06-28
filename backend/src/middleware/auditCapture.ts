@@ -1,6 +1,7 @@
 import type { Request, Response, NextFunction } from 'express'
 import { publishEvent } from '../kafka/producer'
 import { safeGetAuth } from '../lib/clerkConfig'
+import { primaryRoleFromSessionClaims } from '../lib/sessionMetadata'
 
 // Fires on res.finish — completely non-blocking, never delays the response.
 // Publishes a structured audit event to Kafka for every handled request.
@@ -17,9 +18,9 @@ export function auditCapture(req: Request, res: Response, next: NextFunction): v
     if (!req.path.startsWith('/v1')) return
 
     const auth = safeGetAuth(req)
-    const role = (auth?.sessionClaims?.metadata as Record<string, unknown>)?.role as
-      | string
-      | undefined
+    const role = primaryRoleFromSessionClaims(
+      auth?.sessionClaims as Record<string, unknown> | undefined,
+    )
 
     const event = {
       event_id: crypto.randomUUID(),

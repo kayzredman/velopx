@@ -1,10 +1,12 @@
 'use client'
 
 import { useState } from 'react'
+import { FileJson, Scale } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
+import { Label } from '@/components/ui/label'
 import { formatCurrency } from '@/lib/utils'
 
 interface Benchmark {
@@ -63,20 +65,59 @@ export function AssessorTools() {
 
   return (
     <div className="mx-auto max-w-3xl space-y-6">
-      <Card className="bg-navy-900">
-        <CardHeader>
-          <CardTitle>Invoice Validation</CardTitle>
+      <Card>
+        <CardHeader className="pb-4">
+          <div className="flex items-start gap-3">
+            <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-primary/10 text-primary">
+              <Scale className="h-5 w-5" />
+            </div>
+            <div>
+              <CardTitle>Invoice Validation</CardTitle>
+              <CardDescription className="mt-1">
+                Compare a quoted or invoiced amount against regional OEM benchmarks.
+              </CardDescription>
+            </div>
+          </div>
         </CardHeader>
-        <CardContent className="space-y-4">
-          <Input value={oem} onChange={(e) => setOem(e.target.value)} placeholder="OEM part number" />
-          <Input value={invoice} onChange={(e) => setInvoice(e.target.value)} placeholder="Invoice amount" type="number" />
-          <Button onClick={runBenchmark}>Compare to Benchmark</Button>
+        <CardContent className="space-y-5">
+          <div className="grid gap-4 sm:grid-cols-2">
+            <div className="space-y-2">
+              <Label htmlFor="oem">OEM part number</Label>
+              <Input id="oem" value={oem} onChange={(e) => setOem(e.target.value)} placeholder="e.g. 53711-42200" />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="invoice">Invoice amount</Label>
+              <Input
+                id="invoice"
+                value={invoice}
+                onChange={(e) => setInvoice(e.target.value)}
+                placeholder="Amount to validate"
+                type="number"
+              />
+            </div>
+          </div>
+          <Button onClick={runBenchmark} className="min-h-11">
+            Compare to Benchmark
+          </Button>
           {benchmark && (
-            <div className="rounded-lg border border-border p-4 space-y-2 text-sm">
-              <p>Floor: {formatCurrency(benchmark.floor, benchmark.currency)}</p>
-              <p>Average: {formatCurrency(benchmark.average, benchmark.currency)}</p>
-              <p>Ceiling: {formatCurrency(benchmark.ceiling, benchmark.currency)}</p>
-              <p className="text-muted-foreground">Source: {benchmark.source} · Confidence: {benchmark.confidence}</p>
+            <div className="surface-inset space-y-3 p-4 text-sm">
+              <div className="grid gap-2 sm:grid-cols-3">
+                <div>
+                  <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">Floor</p>
+                  <p className="mt-1 font-semibold">{formatCurrency(benchmark.floor, benchmark.currency)}</p>
+                </div>
+                <div>
+                  <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">Average</p>
+                  <p className="mt-1 font-semibold text-primary">{formatCurrency(benchmark.average, benchmark.currency)}</p>
+                </div>
+                <div>
+                  <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">Ceiling</p>
+                  <p className="mt-1 font-semibold">{formatCurrency(benchmark.ceiling, benchmark.currency)}</p>
+                </div>
+              </div>
+              <p className="text-muted-foreground">
+                Source: {benchmark.source} · Confidence: {benchmark.confidence}
+              </p>
               {flag && (
                 <Badge variant={flag === 'CRITICAL' || flag === 'HIGH' ? 'danger' : flag === 'OK' ? 'success' : 'warning'}>
                   {flag} {deviation !== null && `(${deviation.toFixed(1)}%)`}
@@ -87,22 +128,46 @@ export function AssessorTools() {
         </CardContent>
       </Card>
 
-      <Card className="bg-navy-900">
-        <CardHeader>
-          <CardTitle>Audit Export</CardTitle>
+      <Card>
+        <CardHeader className="pb-4">
+          <div className="flex items-start gap-3">
+            <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-primary/10 text-primary">
+              <FileJson className="h-5 w-5" />
+            </div>
+            <div>
+              <CardTitle>Audit Export</CardTitle>
+              <CardDescription className="mt-1">
+                Generate a structured JSON audit trail for a claim reference.
+              </CardDescription>
+            </div>
+          </div>
         </CardHeader>
-        <CardContent className="space-y-4">
-          <Input value={claimRef} onChange={(e) => setClaimRef(e.target.value)} placeholder="Claim reference (e.g. CLM-2026-00123)" />
-          <Button variant="outline" onClick={exportAudit}>
+        <CardContent className="space-y-5">
+          <div className="space-y-2">
+            <Label htmlFor="claimRef">Claim reference</Label>
+            <Input
+              id="claimRef"
+              value={claimRef}
+              onChange={(e) => setClaimRef(e.target.value)}
+              placeholder="e.g. CLM-2026-00123"
+            />
+          </div>
+          <Button variant="outline" onClick={exportAudit} className="min-h-11">
             Export Claim Audit Report
           </Button>
           {exportData && (
-            <pre className="max-h-64 overflow-auto rounded-lg border border-border bg-navy-950 p-4 text-xs">{exportData}</pre>
+            <pre className="surface-inset max-h-64 overflow-auto p-4 font-mono text-xs leading-relaxed">
+              {exportData}
+            </pre>
           )}
         </CardContent>
       </Card>
 
-      {error && <p className="text-sm text-destructive">{error}</p>}
+      {error && (
+        <p className="rounded-lg border border-destructive/30 bg-destructive/5 px-4 py-3 text-sm text-destructive">
+          {error}
+        </p>
+      )}
     </div>
   )
 }

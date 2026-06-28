@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from 'react'
+import {useCallback, useEffect, useState, useMemo} from 'react'
 import {
   View,
   Text,
@@ -10,7 +10,7 @@ import {
 } from 'react-native'
 import { SafeAreaView } from 'react-native-safe-area-context'
 import { useRouter } from 'expo-router'
-import { Colors, useApi } from '@velopx/shared'
+import { useApi, useTheme, useThemedStyles, type ThemeColors} from '@velopx/shared'
 
 // ── Types ──────────────────────────────────────────────────────────────────
 
@@ -42,16 +42,20 @@ interface InboundDelivery {
 
 // ── Helpers ────────────────────────────────────────────────────────────────
 
-const STATUS_COLOR: Record<string, string> = {
-  pending:    Colors.textMuted,
-  assigned:   Colors.info,
-  collected:  Colors.warning,
+function deliveryStatusColors(colors: ThemeColors): Record<string, string> {
+  return {
+  pending:    colors.textMuted,
+  assigned:   colors.info,
+  collected:  colors.warning,
   in_transit: '#8B5CF6',
-  delivered:  Colors.success,
-  confirmed:  Colors.success,
-  disputed:   Colors.error,
-  failed:     Colors.error,
+  delivered:  colors.success,
+  confirmed:  colors.success,
+  disputed:   colors.error,
+  failed:     colors.error,
+  }
 }
+
+
 
 const STATUS_LABEL: Record<string, string> = {
   pending:    'Pending',
@@ -75,6 +79,9 @@ function formatDate(iso: string): string {
 // ── Screen ─────────────────────────────────────────────────────────────────
 
 export default function GarageInboundScreen() {
+  const styles = useThemedStyles(createStyles)
+  const { colors } = useTheme()
+  const STATUS_COLOR = useMemo(() => deliveryStatusColors(colors), [colors])
   const { apiFetch }  = useApi()
   const router        = useRouter()
   const [deliveries, setDeliveries] = useState<InboundDelivery[]>([])
@@ -109,7 +116,7 @@ export default function GarageInboundScreen() {
 
       {loading ? (
         <View style={styles.center}>
-          <ActivityIndicator color={Colors.orange500} size="large" />
+          <ActivityIndicator color={colors.orange500} size="large" />
         </View>
       ) : (
         <FlatList
@@ -128,7 +135,7 @@ export default function GarageInboundScreen() {
             <RefreshControl
               refreshing={refreshing}
               onRefresh={() => { setRefreshing(true); void load() }}
-              tintColor={Colors.orange500}
+              tintColor={colors.orange500}
             />
           }
           contentContainerStyle={styles.list}
@@ -210,10 +217,11 @@ export default function GarageInboundScreen() {
 
 // ── Styles ─────────────────────────────────────────────────────────────────
 
-const styles = StyleSheet.create({
+function createStyles(c: ThemeColors) {
+  return StyleSheet.create({
   safe: {
     flex: 1,
-    backgroundColor: Colors.navy900,
+    backgroundColor: c.navy900,
   },
   header: {
     paddingHorizontal: 20,
@@ -226,11 +234,11 @@ const styles = StyleSheet.create({
   title: {
     fontSize: 22,
     fontWeight: '700',
-    color: Colors.textPrimary,
+    color: c.textPrimary,
   },
   subtitle: {
     fontSize: 12,
-    color: Colors.textSecondary,
+    color: c.textSecondary,
   },
   center: {
     flex: 1,
@@ -244,7 +252,7 @@ const styles = StyleSheet.create({
   sectionLabel: {
     fontSize: 11,
     fontWeight: '700',
-    color: Colors.textSecondary,
+    color: c.textSecondary,
     textTransform: 'uppercase',
     letterSpacing: 0.8,
     marginTop: 20,
@@ -252,10 +260,10 @@ const styles = StyleSheet.create({
     marginLeft: 4,
   },
   card: {
-    backgroundColor: Colors.navy800,
+    backgroundColor: c.navy800,
     borderRadius: 12,
     borderWidth: 1,
-    borderColor: Colors.navy700,
+    borderColor: c.navy700,
     padding: 14,
     marginBottom: 10,
   },
@@ -268,7 +276,7 @@ const styles = StyleSheet.create({
   ref: {
     fontSize: 13,
     fontWeight: '700',
-    color: Colors.textPrimary,
+    color: c.textPrimary,
     flex: 1,
     marginRight: 8,
   },
@@ -283,7 +291,7 @@ const styles = StyleSheet.create({
   },
   parts: {
     fontSize: 12,
-    color: Colors.textSecondary,
+    color: c.textSecondary,
     marginBottom: 10,
   },
   cardBottom: {
@@ -293,13 +301,13 @@ const styles = StyleSheet.create({
   },
   meta: {
     fontSize: 11,
-    color: Colors.textMuted,
+    color: c.textMuted,
     flex: 1,
   },
   amount: {
     fontSize: 12,
     fontWeight: '700',
-    color: Colors.orange500,
+    color: c.orange500,
   },
   liveRow: {
     flexDirection: 'row',
@@ -307,18 +315,18 @@ const styles = StyleSheet.create({
     marginTop: 10,
     paddingTop: 10,
     borderTopWidth: 1,
-    borderTopColor: Colors.navy700,
+    borderTopColor: c.navy700,
   },
   liveDot: {
     width: 7,
     height: 7,
     borderRadius: 4,
-    backgroundColor: Colors.success,
+    backgroundColor: c.success,
     marginRight: 6,
   },
   liveText: {
     fontSize: 11,
-    color: Colors.success,
+    color: c.success,
   },
   empty: {
     alignItems: 'center',
@@ -327,13 +335,14 @@ const styles = StyleSheet.create({
   emptyText: {
     fontSize: 16,
     fontWeight: '600',
-    color: Colors.textSecondary,
+    color: c.textSecondary,
     marginBottom: 8,
   },
   emptyHint: {
     fontSize: 13,
-    color: Colors.textMuted,
+    color: c.textMuted,
     textAlign: 'center',
     paddingHorizontal: 32,
   },
 })
+}

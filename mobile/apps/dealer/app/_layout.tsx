@@ -4,7 +4,7 @@ import { Slot, useRouter, useSegments } from 'expo-router'
 import { useEffect } from 'react'
 import { StatusBar } from 'expo-status-bar'
 import { View, ActivityIndicator } from 'react-native'
-import { Colors, useVelopXFonts } from '@velopx/shared'
+import { ThemeProvider, useTheme, useVelopXFonts } from '@velopx/shared'
 
 const tokenCache = {
   getToken: (key: string) => SecureStore.getItemAsync(key),
@@ -22,29 +22,41 @@ function AuthGuard() {
     const inAuthGroup = segments[0] === '(auth)'
     if (!isSignedIn && !inAuthGroup) router.replace('/(auth)/sign-in')
     else if (isSignedIn && inAuthGroup) router.replace('/(app)')
-  }, [isSignedIn, isLoaded, segments])
+  }, [isSignedIn, isLoaded, segments, router])
 
   return <Slot />
 }
 
-export default function RootLayout() {
-  const publishableKey = process.env.EXPO_PUBLIC_CLERK_PUBLISHABLE_KEY
+function AppShell() {
+  const { colors } = useTheme()
   const { loaded } = useVelopXFonts()
-
-  if (!publishableKey) throw new Error('EXPO_PUBLIC_CLERK_PUBLISHABLE_KEY is not set')
 
   if (!loaded) {
     return (
-      <View style={{ flex: 1, backgroundColor: Colors.navy950, justifyContent: 'center', alignItems: 'center' }}>
-        <ActivityIndicator color={Colors.orange500} />
+      <View style={{ flex: 1, backgroundColor: colors.navy950, justifyContent: 'center', alignItems: 'center' }}>
+        <ActivityIndicator color={colors.orange500} />
       </View>
     )
   }
 
   return (
-    <ClerkProvider publishableKey={publishableKey} tokenCache={tokenCache}>
-      <StatusBar style="light" backgroundColor={Colors.navy950} />
+    <View style={{ flex: 1, backgroundColor: colors.navy950 }}>
+      <StatusBar style={colors.statusBar} backgroundColor={colors.navy950} />
       <AuthGuard />
-    </ClerkProvider>
+    </View>
+  )
+}
+
+export default function RootLayout() {
+  const publishableKey = process.env.EXPO_PUBLIC_CLERK_PUBLISHABLE_KEY
+
+  if (!publishableKey) throw new Error('EXPO_PUBLIC_CLERK_PUBLISHABLE_KEY is not set')
+
+  return (
+    <ThemeProvider>
+      <ClerkProvider publishableKey={publishableKey} tokenCache={tokenCache}>
+        <AppShell />
+      </ClerkProvider>
+    </ThemeProvider>
   )
 }

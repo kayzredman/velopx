@@ -87,7 +87,7 @@ services:
     env_file: .env
     environment:
       DATABASE_URL: postgresql://velopx:velopx_secret@postgres:5432/velopx
-    command: ["sh", "-c", "pnpm db:push && pnpm db:seed"]
+    command: ["sh", "-c", "pnpm exec prisma db push && pnpm db:seed"]
     depends_on:
       postgres:
         condition: service_healthy
